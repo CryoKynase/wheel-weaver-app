@@ -20,8 +20,12 @@ function rimAngle(holes: number, index: number) {
   return -90 + (index - 1) * (360 / holes);
 }
 
-function hubAngle(index: number, step: number) {
+function hubRawDegDS(index: number, step: number) {
   return (index - 1) * step;
+}
+
+function hubRawDegNDS(index: number, step: number) {
+  return (index - 1) * step + step / 2;
 }
 
 function pointOnCircle(radius: number, angleDeg: number) {
@@ -65,11 +69,11 @@ export default function PatternDiagram({
   const ndsRef = findReference(rows, "NDS", "NDS start reference");
 
   const baseAngleDS = dsRef
-    ? rimAngle(holes, dsRef.rimHole) - hubAngle(dsRef.hubHole, hubStep)
+    ? rimAngle(holes, dsRef.rimHole) - hubRawDegDS(dsRef.hubHole, hubStep)
     : -90;
   const baseAngleNDS = ndsRef
-    ? rimAngle(holes, ndsRef.rimHole) - (hubAngle(ndsRef.hubHole, hubStep) + hubStep / 2)
-    : -90 + hubStep / 2;
+    ? rimAngle(holes, ndsRef.rimHole) - hubRawDegNDS(ndsRef.hubHole, hubStep)
+    : baseAngleDS;
 
   const valveRight = effectiveStartRimHole(
     holes,
@@ -98,14 +102,13 @@ export default function PatternDiagram({
 
       {rows.map((row) => {
         const rim = pointOnCircle(RIM_RADIUS, rimAngle(holes, row.rimHole));
-        const hubAngleOffset =
-          row.side === "DS" ? baseAngleDS : baseAngleNDS;
+        const hubAngleOffset = row.side === "DS" ? baseAngleDS : baseAngleNDS;
         const sideOffset = row.side === "DS" ? HUB_OFFSET : -HUB_OFFSET;
         const hub = pointOnCircle(
           HUB_RADIUS,
-          hubAngle(row.hubHole, hubStep) +
-            hubAngleOffset +
-            (row.side === "NDS" ? hubStep / 2 : 0)
+          row.side === "DS"
+            ? hubRawDegDS(row.hubHole, hubStep) + hubAngleOffset
+            : hubRawDegNDS(row.hubHole, hubStep) + hubAngleOffset
         );
         const hubX = hub.x + sideOffset;
         const isVisible = visibleSet.has(row.order);
@@ -142,11 +145,11 @@ export default function PatternDiagram({
         const hole = idx + 1;
         const dsPoint = pointOnCircle(
           HUB_RADIUS,
-          hubAngle(hole, hubStep) + baseAngleDS
+          hubRawDegDS(hole, hubStep) + baseAngleDS
         );
         const ndsPoint = pointOnCircle(
           HUB_RADIUS,
-          hubAngle(hole, hubStep) + baseAngleNDS + hubStep / 2
+          hubRawDegNDS(hole, hubStep) + baseAngleNDS
         );
         return (
           <g key={`hub-${hole}`}>
