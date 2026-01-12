@@ -1,0 +1,75 @@
+import type { PresetSummary } from "../lib/types";
+
+export type PresetBarProps = {
+  presets: PresetSummary[];
+  selectedPresetId: string | null;
+  onSelect: (id: string | null) => void;
+  onSaveAs: () => void;
+  onUpdate: () => void;
+  onDelete: () => void;
+  busy?: boolean;
+};
+
+function summaryLabel(preset: PresetSummary) {
+  return `${preset.holes}H ${preset.wheelType} ${preset.crosses}x`;
+}
+
+export default function PresetBar({
+  presets,
+  selectedPresetId,
+  onSelect,
+  onSaveAs,
+  onUpdate,
+  onDelete,
+  busy,
+}: PresetBarProps) {
+  return (
+    <div className="flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3">
+      <div className="flex-1">
+        <label className="text-xs font-medium uppercase text-slate-500">
+          Presets
+        </label>
+        <select
+          className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+          value={selectedPresetId ?? ""}
+          onChange={(event) =>
+            onSelect(event.target.value ? event.target.value : null)
+          }
+        >
+          <option value="">Select a preset...</option>
+          {presets.map((preset) => (
+            <option key={preset.id} value={preset.id}>
+              {preset.name} — {summaryLabel(preset)}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={onSaveAs}
+          className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium hover:bg-slate-50"
+          disabled={busy}
+        >
+          Save as…
+        </button>
+        <button
+          type="button"
+          onClick={onUpdate}
+          className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium hover:bg-slate-50"
+          disabled={!selectedPresetId || busy}
+        >
+          Update
+        </button>
+        <button
+          type="button"
+          onClick={onDelete}
+          className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700 hover:bg-rose-100"
+          disabled={!selectedPresetId || busy}
+        >
+          Delete
+        </button>
+      </div>
+    </div>
+  );
+}

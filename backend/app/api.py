@@ -1,7 +1,19 @@
-from fastapi import APIRouter
+from datetime import datetime
+
+from fastapi import APIRouter, Depends, HTTPException
+from sqlmodel import Session, select
 
 from app.compute.schraner import compute_pattern
+from app.db import get_session
 from app.models import PatternRequest, PatternResponse
+from app.presets import (
+    Preset,
+    PresetCreate,
+    PresetDetail,
+    PresetSummary,
+    PresetUpdate,
+    preset_to_detail,
+)
 
 router = APIRouter(prefix="/api")
 
@@ -63,3 +75,94 @@ startHubHoleNDS: 1
 ```
 """
     return {"markdown": markdown}
+
+
+@router.get("/presets", response_model=list[PresetSummary])
+def list_presets(session: Session = Depends(get_session)) -> list[PresetSummary]:
+    presets = session.exec(select(Preset).order_by(Preset.updatedAt.desc())).all()
+    return [
+        PresetSummary(
+            id=preset.id,
+            name=preset.name,
+            holes=preset.holes,
+            wheelType=preset.wheelType,
+            crosses=preset.crosses,
+            symmetry=preset.symmetry,
+            updatedAt=preset.updatedAt,
+        )
+        for preset in presets
+    ]
+
+
+@router.post("/presets", response_model=PresetDetail)
+def create_preset(
+    payload: PresetCreate, session: Session = Depends(get_session)
+) -> PresetDetail:
+    params = payload.params
+    preset = Preset(
+        name=payload.name,
+        holes=params.holes,
+        wheelType=params.wheelType,
+        crosses=params.crosses,
+        symmetry=params.symmetry,
+        invertHeads=params.invertHeads,
+        startRimHole=params.startRimHole,
+        valveReference=params.valveReference,
+        startHubHoleDS=params.startHubHoleDS,
+        startHubHoleNDS=params.startHubHoleNDS,
+    )
+    session.add(preset)
+    session.commit()
+    session.refresh(preset)
+    return preset_to_detail(preset)
+
+
+@router.get("/presets/{preset_id}", response_model=PresetDetail)
+def get_preset(
+    preset_id: str, session: Session = Depends(get_session)
+) -> PresetDetail:
+    preset = session.get(Preset, preset_id)
+    if not preset:
+        raise HTTPException(status_code=404, detail="Preset not found")
+    return preset_to_detail(preset)
+
+
+@router.put("/presets/{preset_id}", response_model=PresetDetail)
+def update_preset(
+    preset_id: str,
+    payload: PresetUpdate,
+    session: Session = Depends(get_session),
+) -> PresetDetail:
+    preset = session.get(Preset, preset_id)
+    if not preset:
+        raise HTTPException(status_code=404, detail="Preset not found")
+    if payload.name is not None:
+        preset.name = payload.name
+    if payload.params is not None:
+        params = payload.params
+        preset.holes = params.holes
+        preset.wheelType = params.wheelType
+        preset.crosses = params.crosses
+        preset.symmetry = params.symmetry
+        preset.invertHeads = params.invertHeads
+        preset.startRimHole = params.startRimHole
+        preset.valveReference = params.valveReference
+        preset.startHubHoleDS = params.startHubHoleDS
+        preset.startHubHoleNDS = params.startHubHoleNDS
+    preset.updatedAt = datetime.utcnow()
+    session.add(preset)
+    session.commit()
+    session.refresh(preset)
+    return preset_to_detail(preset)
+
+
+@router.delete("/presets/{preset_id}")
+def delete_preset(
+    preset_id: str, session: Session = Depends(get_session)
+) -> dict:
+    preset = session.get(Preset, preset_id)
+    if not preset:
+        raise HTTPException(status_code=404, detail="Preset not found")
+    session.delete(preset)
+    session.commit()
+    return {"ok": True}

@@ -38,9 +38,13 @@ function commonCrosses(holes: number) {
 
 export type ParamPanelProps = {
   onParamsChange: (params: PatternRequest) => void;
+  initialValues?: PatternRequest;
 };
 
-export default function ParamPanel({ onParamsChange }: ParamPanelProps) {
+export default function ParamPanel({
+  onParamsChange,
+  initialValues,
+}: ParamPanelProps) {
   const {
     register,
     control,
@@ -49,7 +53,7 @@ export default function ParamPanel({ onParamsChange }: ParamPanelProps) {
     formState: { errors },
   } = useForm<PatternRequest>({
     resolver: zodResolver(schema),
-    defaultValues: defaultPatternRequest,
+    defaultValues: initialValues ?? defaultPatternRequest,
   });
 
   const values = useWatch({ control });
@@ -73,6 +77,12 @@ export default function ParamPanel({ onParamsChange }: ParamPanelProps) {
     }, 150);
     return () => window.clearTimeout(timer);
   }, [values, onParamsChange]);
+
+  useEffect(() => {
+    if (initialValues) {
+      reset(initialValues);
+    }
+  }, [initialValues, reset]);
 
   useEffect(() => {
     if (!values) {

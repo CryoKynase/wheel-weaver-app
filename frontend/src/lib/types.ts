@@ -29,3 +29,21 @@ export type PatternResponse = {
   derived: Record<string, number>;
   rows: PatternRow[];
 };
+
+export type PresetSummary = {
+  id: string;
+  name: string;
+  holes: number;
+  wheelType: string;
+  crosses: number;
+  symmetry: string;
+  updatedAt: string;
+};
+
+export type PresetDetail = {
+  id: string;
+  name: string;
+  params: PatternRequest;
+  createdAt: string;
+  updatedAt: string;
+};

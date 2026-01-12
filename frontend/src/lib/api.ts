@@ -1,4 +1,9 @@
-import type { PatternRequest, PatternResponse } from "./types";
+import type {
+  PatternRequest,
+  PatternResponse,
+  PresetDetail,
+  PresetSummary,
+} from "./types";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8007";
 
@@ -23,5 +28,47 @@ export async function computePattern(
 
 export async function fetchReadme(): Promise<{ markdown: string }> {
   const response = await fetch(`${API_BASE}/api/readme`);
+  return handleResponse(response);
+}
+
+export async function listPresets(): Promise<PresetSummary[]> {
+  const response = await fetch(`${API_BASE}/api/presets`);
+  return handleResponse(response);
+}
+
+export async function createPreset(
+  name: string,
+  params: PatternRequest
+): Promise<PresetDetail> {
+  const response = await fetch(`${API_BASE}/api/presets`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, params }),
+  });
+  return handleResponse(response);
+}
+
+export async function getPreset(id: string): Promise<PresetDetail> {
+  const response = await fetch(`${API_BASE}/api/presets/${id}`);
+  return handleResponse(response);
+}
+
+export async function updatePreset(
+  id: string,
+  name?: string,
+  params?: PatternRequest
+): Promise<PresetDetail> {
+  const response = await fetch(`${API_BASE}/api/presets/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, params }),
+  });
+  return handleResponse(response);
+}
+
+export async function deletePreset(id: string): Promise<{ ok: boolean }> {
+  const response = await fetch(`${API_BASE}/api/presets/${id}`, {
+    method: "DELETE",
+  });
   return handleResponse(response);
 }
