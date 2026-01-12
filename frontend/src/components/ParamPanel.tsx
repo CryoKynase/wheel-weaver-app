@@ -39,11 +39,13 @@ function commonCrosses(holes: number) {
 export type ParamPanelProps = {
   onParamsChange: (params: PatternRequest) => void;
   initialValues?: PatternRequest;
+  valveStatus?: { status: "clear" | "crowded"; reason: string };
 };
 
 export default function ParamPanel({
   onParamsChange,
   initialValues,
+  valveStatus,
 }: ParamPanelProps) {
   const {
     register,
@@ -104,8 +106,24 @@ export default function ParamPanel({
 
   return (
     <section className="space-y-6">
-      <header>
-        <h2 className="text-lg font-semibold">Parameters</h2>
+      <header className="space-y-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-lg font-semibold">Parameters</h2>
+          {valveStatus && (
+            <span
+              title={valveStatus.reason}
+              className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${
+                valveStatus.status === "clear"
+                  ? "bg-emerald-100 text-emerald-700"
+                  : "bg-amber-100 text-amber-700"
+              }`}
+            >
+              {valveStatus.status === "clear"
+                ? "Valve area looks clear"
+                : "Valve area may be crowded"}
+            </span>
+          )}
+        </div>
         <p className="text-sm text-slate-600">
           H = {h}, max crosses = {maxCross}
         </p>

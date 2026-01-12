@@ -9,3 +9,31 @@
 body {
   margin: 0;
 }
+
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+
+  body {
+    background: white;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  table {
+    font-size: 11pt;
+  }
+
+  th,
+  td {
+    padding: 4px 6px !important;
+  }
+}

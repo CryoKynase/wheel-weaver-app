@@ -12,6 +12,7 @@ import {
   updatePreset,
 } from "../lib/api";
 import { defaultPatternRequest } from "../lib/defaults";
+import { evaluateValveClearance } from "../lib/valveClearance";
 import type {
   PatternRequest,
   PatternResponse,
@@ -32,6 +33,19 @@ export default function Builder() {
   const [seedValues, setSeedValues] = useState<PatternRequest>(
     defaultPatternRequest
   );
+  const [printMode, setPrintMode] = useState(false);
+
+  const valveStatus = useMemo(() => {
+    if (!data) {
+      return null;
+    }
+    return evaluateValveClearance(
+      data.rows,
+      currentParams.holes,
+      currentParams.startRimHole,
+      currentParams.valveReference
+    );
+  }, [currentParams, data]);
 
   const handleParamsChange = useCallback(async (params: PatternRequest) => {
     setCurrentParams(params);
@@ -143,6 +157,12 @@ export default function Builder() {
     }
   }, [refreshPresets, selectedPresetId]);
 
+  useEffect(() => {
+    if (printMode) {
+      window.setTimeout(() => window.print(), 100);
+    }
+  }, [printMode]);
+
   return (
     <section className="space-y-6">
       <div className="flex items-center justify-between">
@@ -160,25 +180,68 @@ export default function Builder() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
-        <aside className="h-fit lg:sticky lg:top-6">
-          <ParamPanel
-            onParamsChange={handleParamsChange}
-            initialValues={seedValues}
-          />
-        </aside>
+        {!printMode && (
+          <aside className="h-fit lg:sticky lg:top-6 no-print">
+            <ParamPanel
+              onParamsChange={handleParamsChange}
+              initialValues={seedValues}
+              valveStatus={valveStatus ?? undefined}
+            />
+          </aside>
+        )}
         <div className="space-y-4">
-          <PresetBar
-            presets={presets}
-            selectedPresetId={selectedPresetId}
-            onSelect={handleSelectPreset}
-            onSaveAs={handleSaveAs}
-            onUpdate={handleUpdate}
-            onDelete={handleDelete}
-            busy={presetBusy}
-          />
+          <div className="flex flex-wrap items-center justify-between gap-3 no-print">
+            <div className="flex-1">
+              <PresetBar
+                presets={presets}
+                selectedPresetId={selectedPresetId}
+                onSelect={handleSelectPreset}
+                onSaveAs={handleSaveAs}
+                onUpdate={handleUpdate}
+                onDelete={handleDelete}
+                busy={presetBusy}
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => setPrintMode((prev) => !prev)}
+              className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium hover:bg-slate-50"
+            >
+              {printMode ? "Exit print view" : "Print view"}
+            </button>
+          </div>
           {presetError && (
             <div className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
               {presetError}
+            </div>
+          )}
+          {printMode && (
+            <div className="rounded-md border border-slate-200 bg-white px-4 py-3 text-sm">
+              <div className="flex flex-wrap items-center justify-between gap-2 font-semibold">
+                <span>Print view</span>
+                {valveStatus && (
+                  <span
+                    className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${
+                      valveStatus.status === "clear"
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "bg-amber-100 text-amber-700"
+                    }`}
+                  >
+                    {valveStatus.status === "clear"
+                      ? "Valve area looks clear"
+                      : "Valve area may be crowded"}
+                  </span>
+                )}
+              </div>
+              <div className="mt-1 text-xs text-slate-600">
+                {currentParams.holes}H · {currentParams.wheelType} ·{" "}
+                {currentParams.crosses}x · {currentParams.symmetry} ·{" "}
+                {currentParams.invertHeads ? "Invert heads" : "Default heads"} ·{" "}
+                startRimHole {currentParams.startRimHole} ·{" "}
+                {currentParams.valveReference.replace("_", " ")} · DS hub{" "}
+                {currentParams.startHubHoleDS} · NDS hub{" "}
+                {currentParams.startHubHoleNDS}
+              </div>
             </div>
           )}
           <div className="flex items-center gap-3">
@@ -192,7 +255,7 @@ export default function Builder() {
             )}
           </div>
           {data ? (
-            <PatternTable rows={data.rows} />
+            <PatternTable rows={data.rows} printMode={printMode} />
           ) : (
             <div className="rounded-lg border border-dashed border-slate-300 bg-white p-6 text-sm text-slate-500">
               Waiting for parameters...
