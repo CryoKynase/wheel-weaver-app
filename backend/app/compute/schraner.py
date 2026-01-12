@@ -70,6 +70,8 @@ def compute_pattern(req: PatternRequest) -> PatternResponse:
 
     effective_start = _effective_start_rim_hole(req)
     ctx = _Context(req=req, n=n, h=h, effective_start_rim_hole=effective_start)
+    valve_right = effective_start
+    valve_left = ((valve_right - 2) % n) + 1
 
     crosses_desc = _crosses_described(req.crosses)
     asym_note = None
@@ -82,10 +84,11 @@ def compute_pattern(req: PatternRequest) -> PatternResponse:
         step: str,
         notes: str,
         order: int,
+        rim_hole_override: int | None = None,
     ) -> PatternRow:
         odd_even = _odd_even_set(hub_hole_index)
         k = _k_for_hub_hole(hub_hole_index, req.crosses, side, h)
-        rim_hole = _rim_hole_for_k(ctx, side, k)
+        rim_hole = rim_hole_override or _rim_hole_for_k(ctx, side, k)
         if side == "DS":
             physical = _physical_hub_hole(hub_hole_index, req.startHubHoleDS, h)
         else:
@@ -118,14 +121,34 @@ def compute_pattern(req: PatternRequest) -> PatternResponse:
             order_counter += 1
 
     # DS side
-    add_rows("DS", [1], "R1", "Reference at valve")
+    rows.append(
+        make_row(
+            "DS",
+            1,
+            "R1",
+            "Reference at valve (valve-left)",
+            order_counter,
+            rim_hole_override=valve_left,
+        )
+    )
+    order_counter += 1
 
     if req.crosses == 0:
         second_ref_idx = 2
     else:
         second_ref_idx = 2 * req.crosses + 2
     second_ref_idx = ((second_ref_idx - 1) % h) + 1
-    add_rows("DS", [second_ref_idx], "R1", f"Second reference for {req.crosses}x")
+    rows.append(
+        make_row(
+            "DS",
+            second_ref_idx,
+            "R1",
+            "Second reference at valve (valve-right)",
+            order_counter,
+            rim_hole_override=valve_right,
+        )
+    )
+    order_counter += 1
 
     odd_indices = list(range(1, h + 1, 2))
     even_indices = list(range(2, h + 1, 2))
@@ -137,10 +160,33 @@ def compute_pattern(req: PatternRequest) -> PatternResponse:
     add_rows("DS", remaining_even, "R3", "Even set weave")
 
     # NDS side
-    add_rows("NDS", [1], "L1", "NDS start reference")
+    rows.append(
+        make_row(
+            "NDS",
+            1,
+            "L1",
+            "NDS start reference (valve-right)",
+            order_counter,
+            rim_hole_override=valve_right,
+        )
+    )
+    order_counter += 1
+    nds_second_ref_idx = second_ref_idx
+    rows.append(
+        make_row(
+            "NDS",
+            nds_second_ref_idx,
+            "L1",
+            "Second reference (valve-left)",
+            order_counter,
+            rim_hole_override=valve_left,
+        )
+    )
+    order_counter += 1
     nds_remaining_odd = [idx for idx in odd_indices if idx != 1]
     add_rows("NDS", nds_remaining_odd, "L3", "Odd set fill")
-    add_rows("NDS", even_indices, "L4", "Even set weave")
+    remaining_nds_even = [idx for idx in even_indices if idx != nds_second_ref_idx]
+    add_rows("NDS", remaining_nds_even, "L4", "Even set weave")
 
     derived = {
         "H": h,

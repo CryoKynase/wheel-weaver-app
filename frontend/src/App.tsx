@@ -27,8 +27,8 @@ export default function App() {
             </NavLink>
           </nav>
         </aside>
-        <main className="flex-1 p-8">
-          <div className="mx-auto max-w-4xl">
+        <main className="flex-1 p-6">
+          <div className="w-full max-w-none">
             <Routes>
               <Route path="/" element={<Builder />} />
               <Route path="/readme" element={<Readme />} />
