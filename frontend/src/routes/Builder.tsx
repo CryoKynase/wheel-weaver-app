@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import ParamPanel from "../components/ParamPanel";
+import PatternDiagram from "../components/PatternDiagram";
 import PatternTable from "../components/PatternTable";
 import PresetBar from "../components/PresetBar";
 import {
@@ -16,6 +17,7 @@ import { evaluateValveClearance } from "../lib/valveClearance";
 import type {
   PatternRequest,
   PatternResponse,
+  PatternRow,
   PresetSummary,
 } from "../lib/types";
 
@@ -34,18 +36,8 @@ export default function Builder() {
     defaultPatternRequest
   );
   const [printMode, setPrintMode] = useState(false);
-
-  const valveStatus = useMemo(() => {
-    if (!data) {
-      return null;
-    }
-    return evaluateValveClearance(
-      data.rows,
-      currentParams.holes,
-      currentParams.startRimHole,
-      currentParams.valveReference
-    );
-  }, [currentParams, data]);
+  const [showDiagram, setShowDiagram] = useState(true);
+  const [visibleRows, setVisibleRows] = useState<PatternRow[]>([]);
 
   const handleParamsChange = useCallback(async (params: PatternRequest) => {
     setCurrentParams(params);
@@ -81,6 +73,18 @@ export default function Builder() {
     }
     return `${match.holes}H ${match.wheelType} ${match.crosses}x`;
   }, [presets, selectedPresetId]);
+
+  const valveStatus = useMemo(() => {
+    if (!data) {
+      return null;
+    }
+    return evaluateValveClearance(
+      data.rows,
+      currentParams.holes,
+      currentParams.startRimHole,
+      currentParams.valveReference
+    );
+  }, [currentParams, data]);
 
   const handleSelectPreset = useCallback(
     async (id: string | null) => {
@@ -202,13 +206,22 @@ export default function Builder() {
                 busy={presetBusy}
               />
             </div>
-            <button
-              type="button"
-              onClick={() => setPrintMode((prev) => !prev)}
-              className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium hover:bg-slate-50"
-            >
-              {printMode ? "Exit print view" : "Print view"}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowDiagram((prev) => !prev)}
+                className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium hover:bg-slate-50"
+              >
+                {showDiagram ? "Hide diagram" : "Show diagram"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setPrintMode((prev) => !prev)}
+                className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium hover:bg-slate-50"
+              >
+                {printMode ? "Exit print view" : "Print view"}
+              </button>
+            </div>
           </div>
           {presetError && (
             <div className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
@@ -244,6 +257,20 @@ export default function Builder() {
               </div>
             </div>
           )}
+          {showDiagram && !printMode && data && (
+            <div className="rounded-lg border border-slate-200 bg-white p-4">
+              <div className="text-xs font-semibold uppercase text-slate-500">
+                Pattern diagram
+              </div>
+              <PatternDiagram
+                holes={currentParams.holes}
+                rows={data.rows}
+                visibleRows={visibleRows}
+                startRimHole={currentParams.startRimHole}
+                valveReference={currentParams.valveReference}
+              />
+            </div>
+          )}
           <div className="flex items-center gap-3">
             {loading && (
               <div className="text-sm text-slate-600">Loading pattern...</div>
@@ -255,7 +282,11 @@ export default function Builder() {
             )}
           </div>
           {data ? (
-            <PatternTable rows={data.rows} printMode={printMode} />
+            <PatternTable
+              rows={data.rows}
+              printMode={printMode}
+              onVisibleRowsChange={setVisibleRows}
+            />
           ) : (
             <div className="rounded-lg border border-dashed border-slate-300 bg-white p-6 text-sm text-slate-500">
               Waiting for parameters...

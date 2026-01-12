@@ -26,6 +26,7 @@ const columns: ColumnDef<PatternRow>[] = [
 type PatternTableProps = {
   rows: PatternRow[];
   printMode: boolean;
+  onVisibleRowsChange?: (rows: PatternRow[]) => void;
 };
 
 const orderedSteps = ["R1", "R2", "R3", "L1", "L3", "L4"];
@@ -51,7 +52,11 @@ const csvHeaders = [
   "notes",
 ];
 
-export default function PatternTable({ rows, printMode }: PatternTableProps) {
+export default function PatternTable({
+  rows,
+  printMode,
+  onVisibleRowsChange,
+}: PatternTableProps) {
   const [sideFilter, setSideFilter] = useState("All");
   const [stepFilter, setStepFilter] = useState("All");
   const [nextStepMode, setNextStepMode] = useState(false);
@@ -103,6 +108,10 @@ export default function PatternTable({ rows, printMode }: PatternTableProps) {
     }
     return filteredRows.filter((row) => row.step === activeStep);
   }, [filteredRows, nextStepMode, activeStep]);
+
+  useEffect(() => {
+    onVisibleRowsChange?.(visibleRows);
+  }, [onVisibleRowsChange, visibleRows]);
 
   const table = useReactTable({
     data: visibleRows,
