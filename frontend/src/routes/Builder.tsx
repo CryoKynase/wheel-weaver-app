@@ -185,7 +185,7 @@ export default function Builder() {
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
+      <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
         {!printMode && (
           <aside className="h-fit lg:sticky lg:top-6 no-print">
             <ParamPanel

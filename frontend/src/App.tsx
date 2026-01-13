@@ -16,7 +16,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <div className="flex min-h-screen">
-        <aside className="w-64 border-r border-slate-200 bg-white p-6">
+        <aside className="w-56 border-r border-slate-200 bg-white p-6">
           <div className="text-lg font-semibold">Wheel Lacing</div>
           <nav className="mt-6 space-y-2">
             <NavLink to="/" className={navLinkClass} end>
