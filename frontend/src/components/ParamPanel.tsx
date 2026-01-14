@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -43,6 +43,60 @@ export type ParamPanelProps = {
   onSideFilterChange: (next: "All" | "DS" | "NDS") => void;
 };
 
+type ParamGroupProps = {
+  title: string;
+  description?: string;
+  defaultOpen?: boolean;
+  collapsible?: boolean;
+  children: React.ReactNode;
+};
+
+function ParamGroup({
+  title,
+  description,
+  defaultOpen = true,
+  collapsible = true,
+  children,
+}: ParamGroupProps) {
+  const [open, setOpen] = useState(defaultOpen);
+
+  useEffect(() => {
+    setOpen(defaultOpen);
+  }, [defaultOpen]);
+
+  if (!collapsible) {
+    return (
+      <section className="space-y-3">
+        <div>
+          <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
+          {description && (
+            <p className="mt-1 text-xs text-slate-500">{description}</p>
+          )}
+        </div>
+        <div className="space-y-4">{children}</div>
+      </section>
+    );
+  }
+
+  return (
+    <details
+      open={open}
+      onToggle={(event) => setOpen((event.target as HTMLDetailsElement).open)}
+      className="rounded-md border border-slate-200 bg-white"
+    >
+      <summary className="cursor-pointer list-none px-3 py-2 text-sm font-semibold text-slate-900">
+        {title}
+        {description && (
+          <span className="mt-1 block text-xs font-normal text-slate-500">
+            {description}
+          </span>
+        )}
+      </summary>
+      <div className="space-y-4 px-3 pb-3">{children}</div>
+    </details>
+  );
+}
+
 export default function ParamPanel({
   holes,
   onParamsChange,
@@ -51,6 +105,7 @@ export default function ParamPanel({
   sideFilter,
   onSideFilterChange,
 }: ParamPanelProps) {
+  const [isDesktop, setIsDesktop] = useState(false);
   const {
     register,
     control,
@@ -109,6 +164,22 @@ export default function ParamPanel({
     }
   }, [holes, h, maxCross, setValue, values]);
 
+  useEffect(() => {
+    const media = window.matchMedia("(min-width: 1024px)");
+    const update = () => setIsDesktop(media.matches);
+    update();
+    if (media.addEventListener) {
+      media.addEventListener("change", update);
+      return () => media.removeEventListener("change", update);
+    }
+    media.addListener(update);
+    return () => media.removeListener(update);
+  }, []);
+
+  const openBasics = true;
+  const openRimValve = isDesktop;
+  const openHub = isDesktop;
+
   return (
     <section className="space-y-6">
       <header className="space-y-2">
@@ -135,108 +206,131 @@ export default function ParamPanel({
       </header>
 
       <div className="space-y-4">
-        <label className="block">
-          <span className="text-sm font-medium">DS/NDS</span>
-          <select
-            className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
-            value={sideFilter}
-            onChange={(event) =>
-              onSideFilterChange(event.target.value as "All" | "DS" | "NDS")
-            }
-          >
-            <option value="All">All</option>
-            <option value="DS">DS</option>
-            <option value="NDS">NDS</option>
-          </select>
-        </label>
+        <ParamGroup title="Basics" defaultOpen={openBasics}>
+          <label className="block">
+            <span className="text-sm font-medium">DS/NDS</span>
+            <select
+              className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+              value={sideFilter}
+              onChange={(event) =>
+                onSideFilterChange(event.target.value as "All" | "DS" | "NDS")
+              }
+            >
+              <option value="All">All</option>
+              <option value="DS">DS</option>
+              <option value="NDS">NDS</option>
+            </select>
+            <p className="mt-1 text-xs text-slate-500">
+              Filter the output by drive side or non-drive side.
+            </p>
+          </label>
 
-        <label className="block">
-          <span className="text-sm font-medium">Wheel type</span>
-          <select
-            className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
-            {...register("wheelType")}
-          >
-            <option value="rear">Rear</option>
-            <option value="front">Front</option>
-          </select>
-        </label>
+          <label className="block">
+            <span className="text-sm font-medium">Wheel type</span>
+            <select
+              className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+              {...register("wheelType")}
+            >
+              <option value="rear">Rear</option>
+              <option value="front">Front</option>
+            </select>
+          </label>
 
-        <label className="block">
-          <span className="text-sm font-medium">Crosses</span>
-          <select
-            className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
-            {...register("crosses", { valueAsNumber: true })}
-          >
-            {crossOptions.map((opt) => (
-              <option key={opt} value={opt}>
-                {opt}x
-              </option>
-            ))}
-          </select>
-          <p className="mt-1 text-xs text-slate-500">
-            Common first, max allowed {maxCross}x.
-          </p>
-        </label>
+          <label className="block">
+            <span className="text-sm font-medium">Crosses</span>
+            <select
+              className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+              {...register("crosses", { valueAsNumber: true })}
+            >
+              {crossOptions.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt}x
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-slate-500">
+              Common first, max allowed {maxCross}x.
+            </p>
+          </label>
 
-        <label className="block">
-          <span className="text-sm font-medium">Symmetry</span>
-          <select
-            className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
-            {...register("symmetry")}
-          >
-            <option value="symmetrical">Symmetrical</option>
-            <option value="asymmetrical">Asymmetrical</option>
-          </select>
-        </label>
+          <label className="block">
+            <span className="text-sm font-medium">Symmetry</span>
+            <select
+              className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+              {...register("symmetry")}
+            >
+              <option value="symmetrical">Symmetrical</option>
+              <option value="asymmetrical">Asymmetrical</option>
+            </select>
+          </label>
 
-        <label className="flex items-center justify-between rounded-md border border-slate-200 bg-white px-3 py-2">
-          <span className="text-sm font-medium">Invert heads</span>
-          <input type="checkbox" {...register("invertHeads")} />
-        </label>
+          <label className="flex items-center justify-between rounded-md border border-slate-200 bg-white px-3 py-2">
+            <span className="text-sm font-medium">Invert heads</span>
+            <input type="checkbox" {...register("invertHeads")} />
+          </label>
+        </ParamGroup>
 
-        <label className="block">
-          <span className="text-sm font-medium">Start rim hole</span>
-          <input
-            type="number"
-            min={1}
-            max={holes}
-            className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
-            {...register("startRimHole", { valueAsNumber: true })}
-          />
-        </label>
+        <ParamGroup
+          title="Rim + Valve"
+          description="Rim hole and valve alignment choices."
+          defaultOpen={openRimValve}
+        >
+          <label className="block">
+            <span className="text-sm font-medium">Start rim hole</span>
+            <input
+              type="number"
+              min={1}
+              max={holes}
+              className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+              {...register("startRimHole", { valueAsNumber: true })}
+            />
+          </label>
 
-        <label className="block">
-          <span className="text-sm font-medium">Valve reference</span>
-          <select
-            className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
-            {...register("valveReference")}
-          >
-            <option value="right_of_valve">Right of valve</option>
-            <option value="left_of_valve">Left of valve</option>
-          </select>
-        </label>
+          <label className="block">
+            <span className="text-sm font-medium">Valve reference</span>
+            <select
+              className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+              {...register("valveReference")}
+            >
+              <option value="right_of_valve">Right of valve</option>
+              <option value="left_of_valve">Left of valve</option>
+            </select>
+          </label>
+        </ParamGroup>
 
-        <label className="block">
-          <span className="text-sm font-medium">Start hub hole (DS)</span>
-          <input
-            type="number"
-            min={1}
-            max={h}
-            className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
-            {...register("startHubHoleDS", { valueAsNumber: true })}
-          />
-        </label>
+        <ParamGroup
+          title="Hub Starts"
+          description="Where lacing begins on each flange."
+          defaultOpen={openHub}
+        >
+          <label className="block">
+            <span className="text-sm font-medium">Start hub hole (DS)</span>
+            <input
+              type="number"
+              min={1}
+              max={h}
+              className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+              {...register("startHubHoleDS", { valueAsNumber: true })}
+            />
+            <p className="mt-1 text-xs text-slate-500">
+              Counted from the DS flange, 1 to {h}.
+            </p>
+          </label>
 
-        <label className="block">
-          <span className="text-sm font-medium">Start hub hole (NDS)</span>
-          <input
-            type="number"
-            min={1}
-            max={h}
-            className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
-            {...register("startHubHoleNDS", { valueAsNumber: true })}
-          />
-        </label>
+          <label className="block">
+            <span className="text-sm font-medium">Start hub hole (NDS)</span>
+            <input
+              type="number"
+              min={1}
+              max={h}
+              className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+              {...register("startHubHoleNDS", { valueAsNumber: true })}
+            />
+            <p className="mt-1 text-xs text-slate-500">
+              Counted from the NDS flange, 1 to {h}.
+            </p>
+          </label>
+        </ParamGroup>
       </div>
 
       <button
