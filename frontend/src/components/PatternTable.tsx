@@ -75,6 +75,20 @@ const baseLookupFields: Array<{ key: keyof PatternRow; label: string }> = [
   { key: "notes", label: "Notes" },
 ];
 
+const defaultVisibility: Record<keyof PatternRow, boolean> = {
+  spoke: true,
+  order: true,
+  step: true,
+  side: true,
+  oddEvenSet: true,
+  k: true,
+  hubHole: true,
+  heads: true,
+  rimHole: true,
+  crossesDescribed: true,
+  notes: true,
+};
+
 export default function PatternTable({
   rows,
   printMode,
@@ -103,20 +117,7 @@ export default function PatternTable({
     { id: "order", desc: false },
   ]);
   const resolvedVisibility = useMemo<Record<keyof PatternRow, boolean>>(
-    () => ({
-      spoke: true,
-      order: true,
-      step: true,
-      side: true,
-      oddEvenSet: true,
-      k: true,
-      hubHole: true,
-      heads: true,
-      rimHole: true,
-      crossesDescribed: true,
-      notes: true,
-      ...columnVisibility,
-    }),
+    () => ({ ...defaultVisibility, ...columnVisibility }),
     [columnVisibility]
   );
 

@@ -79,12 +79,13 @@ export default function ParamPanel({
   const values = useWatch({ control });
   const h = holes / 2;
   const maxCross = maxCrosses(holes);
+  const rimHoleValue = values?.startRimHole ?? 0;
   const rimHoleHint =
-    values && values.startRimHole >= Math.max(holes - 2, 1)
+    rimHoleValue >= Math.max(holes - 2, 1)
       ? "Near the rim limit; last holes can crowd the valve."
       : null;
   const maxCrossHint =
-    values && values.crosses === maxCross
+    values?.crosses === maxCross
       ? "Max crosses for this hole count."
       : null;
 
