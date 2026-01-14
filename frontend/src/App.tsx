@@ -9,6 +9,7 @@ import {
   defaultTableColumnVisibility,
   type TableColumnVisibility,
 } from "./lib/tableSettings";
+import { Toaster } from "@/components/ui/toaster";
 
 const linkBase =
   "block rounded-md px-3 py-2 text-sm font-medium transition";
@@ -127,6 +128,7 @@ export default function App() {
           </div>
         </main>
       </div>
+      <Toaster />
     </div>
   );
 }
