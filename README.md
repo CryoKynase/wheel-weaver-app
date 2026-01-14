@@ -1,4 +1,4 @@
-# Wheel Lacing App
+# Wheel Weaver
 
 Scaffolded monorepo with a FastAPI backend and a Vite + React frontend.
 

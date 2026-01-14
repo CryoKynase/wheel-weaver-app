@@ -36,4 +36,4 @@ def test_readme() -> None:
     assert response.status_code == 200
     body = response.json()
     assert "markdown" in body
-    assert "# Wheel Lacing App Guide" in body["markdown"]
+    assert "# Wheel Weaver Guide" in body["markdown"]

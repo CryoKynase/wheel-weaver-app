@@ -84,7 +84,7 @@ export default function App() {
         <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
           <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-4">
             <div className="flex flex-wrap items-center gap-4">
-              <div className="text-lg font-semibold">Wheel Lacing</div>
+              <div className="text-lg font-semibold">Wheel Weaver</div>
               <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
                 Holes
                 <select

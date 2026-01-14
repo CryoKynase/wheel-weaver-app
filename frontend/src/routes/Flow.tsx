@@ -89,7 +89,7 @@ export default function Flow() {
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Wheel Lacing Flow</title>
+    <title>Wheel Weaver Flow</title>
     <style>
       :root { color-scheme: light; }
       body { margin: 0; background: #fff; font-family: "Segoe UI", system-ui, sans-serif; }

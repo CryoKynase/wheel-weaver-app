@@ -25,7 +25,7 @@ def compute_pattern_endpoint(req: PatternRequest) -> PatternResponse:
 
 @router.get("/readme")
 def readme() -> dict:
-    markdown =     markdown = """# Wheel Lacing App Guide
+    markdown =     markdown = """# Wheel Weaver Guide
 **Schraner Workshop Method — written for the bench (not for textbooks)**
 
 This app generates a **step-by-step lacing table** (plus an optional diagram) for common wheel patterns using the Schraner workshop sequence:
