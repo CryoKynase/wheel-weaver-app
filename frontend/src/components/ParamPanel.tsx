@@ -354,18 +354,12 @@ export default function ParamPanel({
                 <option value="left_of_valve">Left of valve</option>
               </select>
             </label>
-            {valveStatus && (
+            {valveStatus?.status === "clear" && (
               <div
                 title={valveStatus.reason}
-                className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${
-                  valveStatus.status === "clear"
-                    ? "bg-emerald-100 text-emerald-700"
-                    : "bg-amber-100 text-amber-700"
-                }`}
+                className="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700"
               >
-                {valveStatus.status === "clear"
-                  ? "Valve area looks clear"
-                  : "Valve area may be crowded"}
+                Valve area looks clear
               </div>
             )}
           </AccordionContent>

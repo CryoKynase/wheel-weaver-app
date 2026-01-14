@@ -86,6 +86,16 @@ export default function PatternDiagram({
   const valveLeft = wrapHole(holes, valveRight - 1);
   const visibleSet = new Set(visibleRows.map((row) => row.order));
   const rimLabelSet = new Set<number>([1, valveLeft]);
+  const rimStep = 360 / holes;
+
+  // midpoint between valveLeft (valveRight-1) and valveRight
+  const valveAngle = rimAngle(holes, valveRight) - rimStep / 2;
+
+  // point ON the rim for the arrow
+  const valveRimPoint = pointOnCircle(RIM_RADIUS, valveAngle);
+
+  // point OUTSIDE the rim for the text (prevents it “hugging” one side visually)
+  const valveTextPoint = pointOnCircle(RIM_RADIUS + 26, valveAngle);
 
   return (
     <svg viewBox="-220 -220 440 440" className="w-full h-[360px]">
@@ -278,14 +288,25 @@ export default function PatternDiagram({
         );
       })}
 
+      <line
+        x1={valveRimPoint.x}
+        y1={valveRimPoint.y - 10}
+        x2={valveRimPoint.x}
+        y2={valveRimPoint.y - 2}
+        stroke="#0f172a"
+        strokeWidth={1.6}
+      />
       <polygon
-        points={`0,${-RIM_RADIUS - 10} -6,${-RIM_RADIUS + 2} 6,${-RIM_RADIUS + 2}`}
+        points={`${valveRimPoint.x},${valveRimPoint.y + 2} ${valveRimPoint.x - 6},${
+          valveRimPoint.y - 2
+        } ${valveRimPoint.x + 6},${valveRimPoint.y - 2}`}
         fill="#0f172a"
       />
       <text
-        x={12}
-        y={-RIM_RADIUS - 16}
-        textAnchor="start"
+        x={valveTextPoint.x}
+        y={valveTextPoint.y}
+        textAnchor="middle"
+        dominantBaseline="baseline"
         fontSize={10}
         fill="#0f172a"
       >

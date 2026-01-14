@@ -726,36 +726,43 @@ export default function Builder({ tableColumns }: BuilderProps) {
                         </Button>
                       </CardHeader>
                       <CardContent className="pt-1.5">
-                        <p className="text-xs text-slate-600 lg:hidden">
-                          Hover a row in the table to highlight it here.
-                        </p>
-                        <div className="mt-2 grid max-w-full gap-4 lg:grid-cols-[minmax(0,1fr)_260px]">
-                          <PatternDiagram
-                            holes={currentParams.holes}
-                            rows={data.rows}
-                            visibleRows={highlightRows}
-                            startRimHole={currentParams.startRimHole}
-                            valveReference={currentParams.valveReference}
-                            hoveredSpoke={hoveredSpoke}
-                          />
-                          <div className="hidden space-y-3 text-xs text-slate-600 lg:block">
-                            <div className="text-[11px] font-semibold uppercase text-slate-500">
-                              How to read this
-                            </div>
-                            <p>
-                              Each line is a spoke path. Hover rows in the table to
-                              highlight them here.
-                            </p>
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-700">
-                                DS
-                              </span>
-                              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-700">
-                                NDS
-                              </span>
-                            </div>
-                            <div className="pt-1 text-[11px] font-semibold uppercase text-slate-500">
-                              Spoke: {hoveredSpoke ?? "—"}
+                        <div className="relative">
+                          <Badge
+                            variant="neutral"
+                            className={`pointer-events-none absolute right-3 top-3 transition-opacity duration-150 ${
+                              hoveredSpoke ? "opacity-100" : "opacity-0"
+                            }`}
+                          >
+                            Spoke: {hoveredSpoke ?? "—"}
+                          </Badge>
+                          <p className="text-xs text-slate-600 lg:hidden">
+                            Hover a row in the table to highlight it here.
+                          </p>
+                          <div className="mt-2 grid max-w-full gap-4 lg:grid-cols-[minmax(0,1fr)_260px]">
+                            <PatternDiagram
+                              holes={currentParams.holes}
+                              rows={data.rows}
+                              visibleRows={highlightRows}
+                              startRimHole={currentParams.startRimHole}
+                              valveReference={currentParams.valveReference}
+                              hoveredSpoke={hoveredSpoke}
+                            />
+                            <div className="hidden space-y-3 text-xs text-slate-600 lg:block">
+                              <div className="text-[11px] font-semibold uppercase text-slate-500">
+                                How to read this
+                              </div>
+                              <p>
+                                Each line is a spoke path. Hover rows in the table to
+                                highlight them here.
+                              </p>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-700">
+                                  DS
+                                </span>
+                                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-700">
+                                  NDS
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </div>

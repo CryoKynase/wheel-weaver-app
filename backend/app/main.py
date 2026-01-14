@@ -20,12 +20,14 @@ allowed_origins = [
     "https://wheel-weaver-app-production.up.railway.app",
     "http://localhost:5173",
     "http://localhost:8007",
+    "http://localhost:5177",
+    "http://127.0.0.1:5177",
 ]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
