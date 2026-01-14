@@ -1,6 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
-import { NavLink, Navigate, Route, Routes, useMatch, useNavigate } from "react-router-dom";
+import {
+  NavLink,
+  Navigate,
+  Route,
+  Routes,
+  useMatch,
+  useNavigate,
+} from "react-router-dom";
 import Builder from "./routes/Builder";
+import Flow from "./routes/Flow";
 import Readme from "./routes/Readme";
 import Settings from "./routes/Settings";
 import { defaultPatternRequest } from "./lib/defaults";
@@ -29,6 +37,7 @@ const navLinkClass = ({ isActive }: { isActive: boolean }) =>
 export default function App() {
   const navigate = useNavigate();
   const builderMatch = useMatch("/builder/:holes");
+  const flowMatch = useMatch("/flow/:holes");
   const [selectedHoles, setSelectedHoles] = useState(
     defaultPatternRequest.holes
   );
@@ -40,13 +49,13 @@ export default function App() {
   );
 
   useEffect(() => {
-    const param = builderMatch?.params.holes ?? "";
+    const param = builderMatch?.params.holes ?? flowMatch?.params.holes ?? "";
     const parsed = Number(param);
     if (Number.isNaN(parsed) || !isHoleOption(parsed)) {
       return;
     }
     setSelectedHoles(parsed);
-  }, [builderMatch?.params.holes]);
+  }, [builderMatch?.params.holes, flowMatch?.params.holes]);
 
   useEffect(() => {
     const activeTheme =
@@ -66,6 +75,8 @@ export default function App() {
     () => `/builder/${selectedHoles}`,
     [selectedHoles]
   );
+  const flowPath = useMemo(() => `/flow/${selectedHoles}`, [selectedHoles]);
+  const isFlowActive = Boolean(flowMatch);
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
@@ -85,7 +96,7 @@ export default function App() {
                       return;
                     }
                     setSelectedHoles(next);
-                    navigate(`/builder/${next}`);
+                    navigate(isFlowActive ? `/flow/${next}` : `/builder/${next}`);
                   }}
                 >
                   {holeOptions.map((holes) => (
@@ -99,6 +110,9 @@ export default function App() {
             <nav className="flex flex-wrap items-center gap-2">
               <NavLink to={builderPath} className={navLinkClass}>
                 Builder
+              </NavLink>
+              <NavLink to={flowPath} className={navLinkClass}>
+                Flow
               </NavLink>
               <NavLink to="/readme" className={navLinkClass}>
                 Readme
@@ -136,6 +150,16 @@ export default function App() {
                   <Builder tableColumns={tableColumns} />
                 }
               />
+              <Route
+                path="/flow"
+                element={
+                  <Navigate
+                    to={`/flow/${defaultPatternRequest.holes}`}
+                    replace
+                  />
+                }
+              />
+              <Route path="/flow/:holes" element={<Flow />} />
               <Route path="/readme" element={<Readme />} />
               <Route
                 path="/settings"

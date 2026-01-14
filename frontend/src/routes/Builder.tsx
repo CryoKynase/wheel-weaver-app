@@ -39,6 +39,7 @@ import {
 } from "../lib/api";
 import { defaultPatternRequest } from "../lib/defaults";
 import { isHoleOption } from "../lib/holeOptions";
+import { normalizeParamsForHoles } from "../lib/pattern";
 import type { TableColumnVisibility } from "../lib/tableSettings";
 import { evaluateValveClearance } from "../lib/valveClearance";
 import type {
@@ -51,27 +52,6 @@ import type {
 type BuilderProps = {
   tableColumns: TableColumnVisibility;
 };
-
-function maxCrosses(holes: number) {
-  const h = holes / 2;
-  return Math.floor((h - 2) / 2);
-}
-
-function normalizeParamsForHoles(
-  params: PatternRequest,
-  holes: number
-): PatternRequest {
-  const h = holes / 2;
-  const maxCross = maxCrosses(holes);
-  return {
-    ...params,
-    holes,
-    crosses: Math.min(params.crosses, maxCross),
-    startRimHole: Math.min(params.startRimHole, holes),
-    startHubHoleDS: Math.min(params.startHubHoleDS, h),
-    startHubHoleNDS: Math.min(params.startHubHoleNDS, h),
-  };
-}
 
 const csvColumns: Array<keyof PatternRow> = [
   "spoke",
