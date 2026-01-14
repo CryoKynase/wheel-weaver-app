@@ -8,7 +8,14 @@ import PresetBar from "../components/PresetBar";
 import SchranerIntro from "../components/SchranerIntro";
 import ComputeStatus from "../components/ComputeStatus";
 import { Card, CardContent } from "@/components/ui/card";
-import Segmented, { type SegmentedValue } from "@/components/ui/Segmented";
+import { Button } from "@/components/ui/button";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
 import {
   computePattern,
   createPreset,
@@ -54,6 +61,7 @@ function normalizeParamsForHoles(
 }
 
 export default function Builder({ tableColumns }: BuilderProps) {
+  const { toast } = useToast();
   const navigate = useNavigate();
   const { holes: holesParam } = useParams();
   const parsedHoles = Number(holesParam);
@@ -78,8 +86,6 @@ export default function Builder({ tableColumns }: BuilderProps) {
     normalizeParamsForHoles(defaultPatternRequest, holes)
   );
   const [printMode, setPrintMode] = useState(false);
-  const [resultsView, setResultsView] = useState<SegmentedValue>("both");
-  const [splitView, setSplitView] = useState(false);
   const [visibleRows, setVisibleRows] = useState<PatternRow[]>([]);
   const [highlightRows, setHighlightRows] = useState<PatternRow[]>([]);
   const [hoveredSpoke, setHoveredSpoke] = useState<string | null>(null);
@@ -162,12 +168,18 @@ export default function Builder({ tableColumns }: BuilderProps) {
           navigate(`/builder/${preset.params.holes}`);
         }
       } catch (err) {
-        setPresetError(err instanceof Error ? err.message : "Unexpected error");
+        const message = err instanceof Error ? err.message : "Unexpected error";
+        setPresetError(message);
+        toast({
+          title: "Something went wrong",
+          description: message,
+          variant: "destructive",
+        });
       } finally {
         setPresetBusy(false);
       }
     },
-    [holes, navigate]
+    [holes, navigate, toast]
   );
 
   const handleSaveAs = useCallback(async () => {
@@ -182,12 +194,19 @@ export default function Builder({ tableColumns }: BuilderProps) {
       await refreshPresets();
       setSelectedPresetId(created.id);
       setActivePresetParams(created.params);
+      toast({ title: "Preset saved", description: name });
     } catch (err) {
-      setPresetError(err instanceof Error ? err.message : "Unexpected error");
+      const message = err instanceof Error ? err.message : "Unexpected error";
+      setPresetError(message);
+      toast({
+        title: "Something went wrong",
+        description: message,
+        variant: "destructive",
+      });
     } finally {
       setPresetBusy(false);
     }
-  }, [currentParams, refreshPresets]);
+  }, [currentParams, refreshPresets, toast]);
 
   const handleUpdate = useCallback(async () => {
     if (!selectedPresetId) {
@@ -199,12 +218,22 @@ export default function Builder({ tableColumns }: BuilderProps) {
       await updatePreset(selectedPresetId, undefined, currentParams);
       await refreshPresets();
       setActivePresetParams(currentParams);
+      const presetName =
+        presets.find((preset) => preset.id === selectedPresetId)?.name ??
+        "Preset";
+      toast({ title: "Preset saved", description: presetName });
     } catch (err) {
-      setPresetError(err instanceof Error ? err.message : "Unexpected error");
+      const message = err instanceof Error ? err.message : "Unexpected error";
+      setPresetError(message);
+      toast({
+        title: "Something went wrong",
+        description: message,
+        variant: "destructive",
+      });
     } finally {
       setPresetBusy(false);
     }
-  }, [currentParams, refreshPresets, selectedPresetId]);
+  }, [currentParams, presets, refreshPresets, selectedPresetId, toast]);
 
   const handleDelete = useCallback(async () => {
     if (!selectedPresetId) {
@@ -217,16 +246,26 @@ export default function Builder({ tableColumns }: BuilderProps) {
     setPresetBusy(true);
     setPresetError(null);
     try {
+      const presetName =
+        presets.find((preset) => preset.id === selectedPresetId)?.name ??
+        "Preset";
       await deletePreset(selectedPresetId);
       setSelectedPresetId(null);
       setActivePresetParams(null);
       await refreshPresets();
+      toast({ title: "Preset deleted", description: presetName });
     } catch (err) {
-      setPresetError(err instanceof Error ? err.message : "Unexpected error");
+      const message = err instanceof Error ? err.message : "Unexpected error";
+      setPresetError(message);
+      toast({
+        title: "Something went wrong",
+        description: message,
+        variant: "destructive",
+      });
     } finally {
       setPresetBusy(false);
     }
-  }, [refreshPresets, selectedPresetId]);
+  }, [presets, refreshPresets, selectedPresetId, toast]);
 
   useEffect(() => {
     if (printMode) {
@@ -324,22 +363,6 @@ export default function Builder({ tableColumns }: BuilderProps) {
         )}
         <div className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3 no-print">
-            <div className="flex flex-wrap items-center gap-2">
-              <Segmented
-                value={resultsView}
-                onChange={setResultsView}
-                label="Results"
-              />
-              {resultsView === "both" && (
-                <button
-                  type="button"
-                  onClick={() => setSplitView((prev) => !prev)}
-                  className="hidden rounded-md border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 2xl:inline-flex"
-                >
-                  Split view {splitView ? "On" : "Off"}
-                </button>
-              )}
-            </div>
             <div className="flex items-center gap-2">
               <button
                 type="button"
@@ -392,15 +415,73 @@ export default function Builder({ tableColumns }: BuilderProps) {
             onRetry={() => handleParamsChange(currentParams)}
           />
           {data ? (
-            <>
-              {resultsView === "both" && (
-                <div
-                  className={
-                    splitView && !printMode
-                      ? "grid gap-4 2xl:grid-cols-[minmax(420px,0.9fr)_minmax(640px,1.1fr)]"
-                      : "space-y-4"
-                  }
-                >
+            <Tabs defaultValue="both" className="space-y-4">
+              <TabsList>
+                <TabsTrigger value="table">Table</TabsTrigger>
+                <TabsTrigger value="diagram">Diagram</TabsTrigger>
+                <TabsTrigger value="both">Both</TabsTrigger>
+              </TabsList>
+              <TabsContent value="table">
+                <Card id="pattern-table">
+                  <CardContent className="space-y-3">
+                    <div className="text-xs font-semibold uppercase text-slate-500">
+                      Pattern table
+                    </div>
+                    <div className="overflow-x-auto">
+                      <PatternTable
+                        rows={data.rows}
+                        printMode={printMode}
+                        onVisibleRowsChange={setVisibleRows}
+                        onHighlightRowsChange={setHighlightRows}
+                        onHoverSpokeChange={setHoveredSpoke}
+                        sideFilter={sideFilter}
+                        columnVisibility={tableColumns}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              <TabsContent value="diagram">
+                {!printMode && (
+                  <Card>
+                    <CardContent>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="text-xs font-semibold uppercase text-slate-500">
+                          Pattern diagram
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 text-xs"
+                          onClick={() =>
+                            document
+                              .getElementById("pattern-table")
+                              ?.scrollIntoView({
+                                behavior: "smooth",
+                                block: "start",
+                              })
+                          }
+                        >
+                          Jump to table
+                        </Button>
+                      </div>
+                      <div className="mt-3 max-w-full">
+                        <PatternDiagram
+                          holes={currentParams.holes}
+                          rows={data.rows}
+                          visibleRows={highlightRows}
+                          startRimHole={currentParams.startRimHole}
+                          valveReference={currentParams.valveReference}
+                          hoveredSpoke={hoveredSpoke}
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </TabsContent>
+              <TabsContent value="both">
+                <div className="space-y-6">
                   {!printMode && (
                     <Card>
                       <CardContent>
@@ -408,8 +489,11 @@ export default function Builder({ tableColumns }: BuilderProps) {
                           <div className="text-xs font-semibold uppercase text-slate-500">
                             Pattern diagram
                           </div>
-                          <button
+                          <Button
                             type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 px-2 text-xs"
                             onClick={() =>
                               document
                                 .getElementById("pattern-table")
@@ -418,10 +502,9 @@ export default function Builder({ tableColumns }: BuilderProps) {
                                   block: "start",
                                 })
                             }
-                            className="text-xs font-semibold text-slate-600 hover:text-slate-900"
                           >
                             Jump to table
-                          </button>
+                          </Button>
                         </div>
                         <div className="mt-3 max-w-full">
                           <PatternDiagram
@@ -436,12 +519,9 @@ export default function Builder({ tableColumns }: BuilderProps) {
                       </CardContent>
                     </Card>
                   )}
-                  <Card>
+                  <Card id="pattern-table">
                     <CardContent className="space-y-3">
-                      <div
-                        id="pattern-table"
-                        className="text-xs font-semibold uppercase text-slate-500"
-                      >
+                      <div className="text-xs font-semibold uppercase text-slate-500">
                         Pattern table
                       </div>
                       <div className="overflow-x-auto">
@@ -458,50 +538,8 @@ export default function Builder({ tableColumns }: BuilderProps) {
                     </CardContent>
                   </Card>
                 </div>
-              )}
-              {resultsView === "diagram" && !printMode && (
-                <Card>
-                  <CardContent>
-                    <div className="text-xs font-semibold uppercase text-slate-500">
-                      Pattern diagram
-                    </div>
-                    <div className="mt-3 max-w-full">
-                      <PatternDiagram
-                        holes={currentParams.holes}
-                        rows={data.rows}
-                        visibleRows={highlightRows}
-                        startRimHole={currentParams.startRimHole}
-                        valveReference={currentParams.valveReference}
-                        hoveredSpoke={hoveredSpoke}
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-              {resultsView === "table" && (
-                <Card>
-                  <CardContent className="space-y-3">
-                    <div
-                      id="pattern-table"
-                      className="text-xs font-semibold uppercase text-slate-500"
-                    >
-                      Pattern table
-                    </div>
-                    <div className="overflow-x-auto">
-                      <PatternTable
-                        rows={data.rows}
-                        printMode={printMode}
-                        onVisibleRowsChange={setVisibleRows}
-                        onHighlightRowsChange={setHighlightRows}
-                        onHoverSpokeChange={setHoveredSpoke}
-                        sideFilter={sideFilter}
-                        columnVisibility={tableColumns}
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </>
+              </TabsContent>
+            </Tabs>
           ) : (
             <div className="rounded-lg border border-dashed border-slate-300 bg-white p-6 text-sm text-slate-500">
               Pick your wheel basics to generate a pattern.
