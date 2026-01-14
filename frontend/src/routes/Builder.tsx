@@ -809,7 +809,7 @@ export default function Builder({ tableColumns }: BuilderProps) {
                       </DropdownMenu>
                     </CardHeader>
                     <CardContent className="space-y-3 pt-1.5">
-                      <div className="overflow-auto rounded-md border border-slate-200 bg-white lg:max-h-[calc(100vh-420px)]">
+                      <div className="overflow-x-auto rounded-md border border-slate-200 bg-white">
                         <PatternTable
                           rows={data.rows}
                           printMode={printMode}
