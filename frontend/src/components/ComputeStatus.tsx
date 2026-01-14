@@ -50,14 +50,7 @@ export default function ComputeStatus({
   }
 
   if (rowCount != null) {
-    const time = lastUpdated
-      ? lastUpdated.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-      : null;
-    return (
-      <div className={`text-xs text-muted-foreground ${className}`}>
-        {time ? `Updated ${time} · ` : ""}{rowCount} rows
-      </div>
-    );
+    return null;
   }
 
   return null;

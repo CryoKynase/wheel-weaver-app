@@ -472,17 +472,7 @@ export default function Builder({ tableColumns }: BuilderProps) {
           </aside>
         )}
         <div className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3 no-print">
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setPrintMode((prev) => !prev)}
-              >
-                {printMode ? "Exit print view" : "Print view"}
-              </Button>
-            </div>
-          </div>
+          <div className="no-print" />
           {printMode && (
             <div className="rounded-md border border-slate-200 bg-white px-4 py-3 text-sm">
               <div className="flex flex-wrap items-center justify-between gap-2 font-semibold">
@@ -582,6 +572,15 @@ export default function Builder({ tableColumns }: BuilderProps) {
                 >
                   Both
                 </TabsTrigger>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => setPrintMode((prev) => !prev)}
+                >
+                  {printMode ? "Exit print view" : "Print view"}
+                </Button>
               </TabsList>
               <TabsContent
                 value="table"
@@ -591,13 +590,14 @@ export default function Builder({ tableColumns }: BuilderProps) {
                   id="pattern-table"
                   className="border-l-4 border-l-primary/40 transition-all duration-200 ease-out"
                 >
-                  <CardHeader className="flex items-center justify-between gap-2 border-b border-border bg-muted/40 py-1.5">
-                    <div className="text-xs font-semibold uppercase text-slate-500">
-                      Table
-                    </div>
+                  <CardHeader className="flex flex-wrap items-center gap-2 border-b border-border bg-muted/40 py-1.5">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm" className="hover:text-primary">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-xs hover:text-primary sm:ml-auto"
+                        >
                           Actions
                         </Button>
                       </DropdownMenuTrigger>
@@ -649,9 +649,8 @@ export default function Builder({ tableColumns }: BuilderProps) {
               >
                 {!printMode && (
                   <Card className="border-l-4 border-l-primary/40 transition-all duration-200 ease-out">
-                    <CardHeader className="flex items-center justify-between gap-2 border-b border-border bg-muted/40 py-1.5">
-                      <div className="flex items-center gap-2 text-xs font-semibold uppercase text-slate-500">
-                        Diagram
+                    <CardHeader className="flex flex-wrap items-center gap-2 border-b border-border bg-muted/40 py-1.5">
+                      <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase text-slate-500">
                         {sideFilter !== "All" && (
                           <Badge variant="neutral">Filter: {sideFilter}</Badge>
                         )}
@@ -663,7 +662,7 @@ export default function Builder({ tableColumns }: BuilderProps) {
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="h-6 px-2 text-[11px] text-primary underline-offset-4 hover:bg-primary/10 hover:text-primary hover:underline"
+                        className="h-6 px-2 text-[11px] text-primary underline-offset-4 hover:bg-primary/10 hover:text-primary hover:underline sm:ml-auto"
                         aria-label="Jump to the pattern table"
                         onClick={() => {
                           setResultsTab("table");
@@ -722,9 +721,8 @@ export default function Builder({ tableColumns }: BuilderProps) {
                 <div className="space-y-2">
                   {!printMode && (
                     <Card className="border-l-4 border-l-primary/40 transition-all duration-200 ease-out">
-                      <CardHeader className="flex items-center justify-between gap-2 border-b border-border bg-muted/40 py-1.5">
-                        <div className="flex items-center gap-2 text-xs font-semibold uppercase text-slate-500">
-                          Diagram
+                      <CardHeader className="flex flex-wrap items-center gap-2 border-b border-border bg-muted/40 py-1.5">
+                        <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase text-slate-500">
                           {sideFilter !== "All" && (
                             <Badge variant="neutral">Filter: {sideFilter}</Badge>
                           )}
@@ -736,7 +734,7 @@ export default function Builder({ tableColumns }: BuilderProps) {
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className="h-6 px-2 text-[11px] text-primary underline-offset-4 hover:bg-primary/10 hover:text-primary hover:underline"
+                          className="h-6 px-2 text-[11px] text-primary underline-offset-4 hover:bg-primary/10 hover:text-primary hover:underline sm:ml-auto"
                           aria-label="Jump to the pattern table"
                           onClick={() =>
                             document
@@ -788,13 +786,14 @@ export default function Builder({ tableColumns }: BuilderProps) {
                     id="pattern-table-both"
                     className="border-l-4 border-l-primary/40 transition-all duration-200 ease-out"
                   >
-                    <CardHeader className="flex items-center justify-between gap-2 border-b border-border bg-muted/40 py-1.5">
-                      <div className="text-xs font-semibold uppercase text-slate-500">
-                        Table
-                      </div>
+                    <CardHeader className="flex flex-wrap items-center gap-2 border-b border-border bg-muted/40 py-1.5">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="outline" size="sm" className="hover:text-primary">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs hover:text-primary sm:ml-auto"
+                          >
                             Actions
                           </Button>
                         </DropdownMenuTrigger>
