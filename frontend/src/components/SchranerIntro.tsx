@@ -42,7 +42,7 @@ export default function SchranerIntro() {
             Schraner workshop method
           </div>
           <p className="mt-1 text-sm text-slate-700">
-            Anchor the build at the valve with two reference spokes, then lace in
+            This method involves anchoring the build starting at the valve with two reference spokes, then lace in
             a fixed sequence (R1 to R2 to R3 to L1 to L3 to L4).
           </p>
         </Button>
