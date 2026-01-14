@@ -8,15 +8,33 @@ def test_derive_h() -> None:
 
 
 def test_validate_crosses_boundaries_32h() -> None:
-    validate_crosses(32, 7)
+    validate_crosses(32, 4)
     with pytest.raises(ValueError):
-        validate_crosses(32, 8)
+        validate_crosses(32, 5)
+
+
+def test_validate_crosses_boundaries_36h() -> None:
+    validate_crosses(36, 4)
+    with pytest.raises(ValueError):
+        validate_crosses(36, 5)
 
 
 def test_validate_crosses_boundaries_24h() -> None:
-    validate_crosses(24, 5)
+    validate_crosses(24, 3)
     with pytest.raises(ValueError):
-        validate_crosses(24, 6)
+        validate_crosses(24, 4)
+
+
+def test_validate_crosses_boundaries_20h() -> None:
+    validate_crosses(20, 1)
+    with pytest.raises(ValueError):
+        validate_crosses(20, 2)
+
+
+def test_validate_crosses_boundaries_28h() -> None:
+    validate_crosses(28, 3)
+    with pytest.raises(ValueError):
+        validate_crosses(28, 4)
 
 
 def test_common_crosses_32h() -> None:

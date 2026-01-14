@@ -33,6 +33,15 @@ const schema = z.object({
 });
 
 function maxCrosses(holes: number) {
+  if (holes === 20) {
+    return 1;
+  }
+  if (holes === 24 || holes === 28) {
+    return 3;
+  }
+  if (holes === 32 || holes === 36) {
+    return 4;
+  }
   const h = holes / 2;
   return Math.floor((h - 2) / 2);
 }
@@ -158,9 +167,6 @@ export default function ParamPanel({
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-lg font-semibold">Parameters</h2>
         </div>
-        <p className="text-sm text-slate-600">
-          H = {h}, max crosses = {maxCross}
-        </p>
       </header>
 
       <TooltipProvider delayDuration={200}>

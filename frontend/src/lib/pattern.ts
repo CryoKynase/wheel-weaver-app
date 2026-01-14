@@ -1,6 +1,15 @@
 import type { PatternRequest } from "./types";
 
 export function maxCrosses(holes: number) {
+  if (holes === 20) {
+    return 1;
+  }
+  if (holes === 24 || holes === 28) {
+    return 3;
+  }
+  if (holes === 32 || holes === 36) {
+    return 4;
+  }
   const h = holes / 2;
   return Math.floor((h - 2) / 2);
 }
