@@ -1,5 +1,5 @@
 import type { PatternRequest, PresetSummary } from "../lib/types";
-import Badge from "./ui/Badge";
+import Badge from "@/components/ui/Badge";
 
 export type PresetBarProps = {
   presets: PresetSummary[];

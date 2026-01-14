@@ -7,8 +7,8 @@ import PatternTable from "../components/PatternTable";
 import PresetBar from "../components/PresetBar";
 import SchranerIntro from "../components/SchranerIntro";
 import ComputeStatus from "../components/ComputeStatus";
-import { Card, CardContent } from "../components/ui/Card";
-import Segmented, { type SegmentedValue } from "../components/ui/Segmented";
+import { Card, CardContent } from "@/components/ui/card";
+import Segmented, { type SegmentedValue } from "@/components/ui/Segmented";
 import {
   computePattern,
   createPreset,
