@@ -12,17 +12,17 @@ import type { PatternRow } from "../lib/types";
 import type { TableColumnVisibility } from "../lib/tableSettings";
 
 const baseColumns: ColumnDef<PatternRow>[] = [
-  { accessorKey: "spoke", header: "spoke" },
-  { accessorKey: "order", header: "order" },
-  { accessorKey: "step", header: "step" },
-  { accessorKey: "side", header: "side" },
-  { accessorKey: "oddEvenSet", header: "oddEvenSet" },
-  { accessorKey: "k", header: "k" },
-  { accessorKey: "hubHole", header: "hubHole" },
-  { accessorKey: "heads", header: "heads" },
-  { accessorKey: "rimHole", header: "rimHole" },
-  { accessorKey: "crossesDescribed", header: "crossesDescribed" },
-  { accessorKey: "notes", header: "notes" },
+  { accessorKey: "spoke", header: "Spoke" },
+  { accessorKey: "order", header: "Order" },
+  { accessorKey: "step", header: "Step" },
+  { accessorKey: "side", header: "Side" },
+  { accessorKey: "oddEvenSet", header: "Odd/Even Set" },
+  { accessorKey: "k", header: "K" },
+  { accessorKey: "hubHole", header: "Hub Hole" },
+  { accessorKey: "heads", header: "Heads" },
+  { accessorKey: "rimHole", header: "Rim Hole" },
+  { accessorKey: "crossesDescribed", header: "Crosses" },
+  { accessorKey: "notes", header: "Notes" },
 ];
 
 type PatternTableProps = {

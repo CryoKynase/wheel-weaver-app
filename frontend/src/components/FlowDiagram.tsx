@@ -95,20 +95,32 @@ function valveRelativeRimHole(
 }
 
 function buildFlowLayout(params: PatternRequest, rows: PatternRow[]): FlowLayout {
-  const valveRight = effectiveStartRimHole(
+  const effectiveStart = effectiveStartRimHole(
     params.holes,
     params.startRimHole,
     params.valveReference
   );
-  const valveLeft = ((valveRight - 2 + params.holes) % params.holes) + 1;
+  const valveRight =
+    params.valveReference === "right_of_valve"
+      ? effectiveStart
+      : (effectiveStart % params.holes) + 1;
+  const valveLeft =
+    params.valveReference === "left_of_valve"
+      ? effectiveStart
+      : ((effectiveStart - 2 + params.holes) % params.holes) + 1;
   const spokesPerSide = params.holes / 2;
+  const notePattern = /valve-(left|right)/i;
   const referenceRows = rows.filter(
+    (row) => row.side === "DS" && notePattern.test(row.notes)
+  );
+  const dsStepFallback = rows.filter(
     (row) => row.side === "DS" && row.step === "R1"
   );
-  const refLeft = referenceRows.find((row) =>
+  const dsRefs = referenceRows.length ? referenceRows : dsStepFallback;
+  const refLeft = dsRefs.find((row) =>
     row.notes.toLowerCase().includes("valve-left")
   );
-  const refRight = referenceRows.find((row) =>
+  const refRight = dsRefs.find((row) =>
     row.notes.toLowerCase().includes("valve-right")
   );
 
@@ -138,24 +150,36 @@ function buildFlowLayout(params: PatternRequest, rows: PatternRow[]): FlowLayout
       ? "Start rim hole is valve-right."
       : "Start rim hole is valve-left.";
 
+  const startLines = [
+    "View from the drive-side (cassette side), valve at 12 o'clock.",
+    "Rim holes are numbered from valve-right = 1, increasing clockwise when viewed from the drive side.",
+    "Hub holes are numbered 1..H per flange, clockwise when viewed from the drive side.",
+    valveRefLabel,
+  ];
+  if (refLeft || refRight) {
+    startLines.push(
+      `Reference spokes: DS hub ${refLeft?.hubHole ?? "?"} at valve-left rim hole ${valveLeft}, then DS hub ${
+        refRight?.hubHole ?? "?"
+      } at valve-right rim hole ${valveRight}.`
+    );
+  }
+
   addNode({
     id: "start",
     type: "start",
     title: "Start",
-    lines: [
-      "View from the drive-side (cassette side), valve at 12 o'clock.",
-      "Rim holes are numbered from valve-right = 1, increasing clockwise when viewed from the drive side.",
-      "Hub holes are numbered 1..H per flange, clockwise when viewed from the drive side.",
-      valveRefLabel,
-      `Reference spokes: DS hub ${refLeft?.hubHole ?? "?"} at valve-left rim hole ${valveLeft}, then DS hub ${
-        refRight?.hubHole ?? "?"
-      } at valve-right rim hole ${valveRight}.`,
-    ],
+    lines: startLines,
   });
 
-  const ndsReferenceRows = rows.filter(
+  const ndsRefsPrimary = rows.filter(
+    (row) => row.side === "NDS" && notePattern.test(row.notes)
+  );
+  const ndsStepFallback = rows.filter(
     (row) => row.side === "NDS" && row.step === "L1"
   );
+  const ndsReferenceRows = ndsRefsPrimary.length
+    ? ndsRefsPrimary
+    : ndsStepFallback;
   const ndsLeft = ndsReferenceRows.find((row) =>
     row.notes.toLowerCase().includes("valve-left")
   );
@@ -170,26 +194,35 @@ function buildFlowLayout(params: PatternRequest, rows: PatternRow[]): FlowLayout
     { id: "nds-even", step: "L4", side: "NDS", label: "Non-drive even set" },
   ];
 
-  phases.forEach((phase) => {
+  const phaseGroups = phases
+    .map((phase) => ({
+      ...phase,
+      rows: rows.filter(
+        (row) => row.step === phase.step && row.side === phase.side
+      ),
+    }))
+    .filter((group) => group.rows.length > 0);
+
+  phaseGroups.forEach((phase) => {
     if (phase.id === "nds-odd") {
-      addNode({
-        id: "phase-nds-reference",
-        type: "phase",
-        title: "Non-drive reference spokes",
-        lines: [
-          `NDS - L1 - ${ndsReferenceRows.length || 2} spokes`,
-          `Reference spokes: NDS hub ${
-            ndsRight?.hubHole ?? "?"
-          } at valve-right rim hole ${valveRight}, then NDS hub ${
-            ndsLeft?.hubHole ?? "?"
-          } at valve-left rim hole ${valveLeft}.`,
-        ],
-      });
+      if (ndsReferenceRows.length > 0) {
+        addNode({
+          id: "phase-nds-reference",
+          type: "phase",
+          title: "Non-drive reference spokes",
+          lines: [
+            `NDS - L1 - ${ndsReferenceRows.length} spokes`,
+            `Reference spokes: NDS hub ${
+              ndsRight?.hubHole ?? "?"
+            } at valve-right rim hole ${valveRight}, then NDS hub ${
+              ndsLeft?.hubHole ?? "?"
+            } at valve-left rim hole ${valveLeft}.`,
+          ],
+        });
+      }
     }
 
-    const phaseRows = rows.filter(
-      (row) => row.step === phase.step && row.side === phase.side
-    );
+    const phaseRows = phase.rows;
     const sampleRows = phaseRows.slice(0, 3);
     const first = sampleRows[0];
     const second = sampleRows[1] ?? sampleRows[0];

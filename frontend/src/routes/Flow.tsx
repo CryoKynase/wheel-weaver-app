@@ -38,6 +38,16 @@ export default function Flow() {
 
   const zoom = zoomLevels[zoomIndex] ?? 1;
 
+  const filteredRows = useMemo(() => {
+    if (!data) {
+      return [];
+    }
+    if (sideFilter === "All") {
+      return data.rows;
+    }
+    return data.rows.filter((row) => row.side === sideFilter);
+  }, [data, sideFilter]);
+
   const handleParamsChange = useCallback(async (params: PatternRequest) => {
     setCurrentParams(params);
     setLoading(true);
@@ -226,7 +236,7 @@ export default function Flow() {
             <div className="overflow-auto rounded-md border border-slate-200 bg-white p-4 lg:max-h-[calc(100vh-320px)]">
               <FlowDiagram
                 params={currentParams}
-                rows={data.rows}
+                rows={filteredRows}
                 zoom={zoom}
                 svgRef={svgRef}
               />
