@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import type { PatternRequest, PresetSummary } from "../lib/types";
 import Badge from "@/components/ui/Badge";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/input";
 import {
   Dialog,
