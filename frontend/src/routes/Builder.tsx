@@ -8,6 +8,7 @@ import PresetBar from "../components/PresetBar";
 import SchranerIntro from "../components/SchranerIntro";
 import ComputeStatus from "../components/ComputeStatus";
 import { Card, CardContent } from "../components/ui/Card";
+import Segmented, { type SegmentedValue } from "../components/ui/Segmented";
 import {
   computePattern,
   createPreset,
@@ -75,7 +76,8 @@ export default function Builder({ tableColumns }: BuilderProps) {
     normalizeParamsForHoles(defaultPatternRequest, holes)
   );
   const [printMode, setPrintMode] = useState(false);
-  const [showDiagram, setShowDiagram] = useState(true);
+  const [resultsView, setResultsView] = useState<SegmentedValue>("both");
+  const [splitView, setSplitView] = useState(false);
   const [visibleRows, setVisibleRows] = useState<PatternRow[]>([]);
   const [highlightRows, setHighlightRows] = useState<PatternRow[]>([]);
   const [hoveredSpoke, setHoveredSpoke] = useState<string | null>(null);
@@ -311,14 +313,23 @@ export default function Builder({ tableColumns }: BuilderProps) {
         )}
         <div className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3 no-print">
+            <div className="flex flex-wrap items-center gap-2">
+              <Segmented
+                value={resultsView}
+                onChange={setResultsView}
+                label="Results"
+              />
+              {resultsView === "both" && (
+                <button
+                  type="button"
+                  onClick={() => setSplitView((prev) => !prev)}
+                  className="hidden rounded-md border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 2xl:inline-flex"
+                >
+                  Split view {splitView ? "On" : "Off"}
+                </button>
+              )}
+            </div>
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setShowDiagram((prev) => !prev)}
-                className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium hover:bg-slate-50"
-              >
-                {showDiagram ? "Hide diagram" : "Show diagram"}
-              </button>
               <button
                 type="button"
                 onClick={() => setPrintMode((prev) => !prev)}
@@ -362,21 +373,6 @@ export default function Builder({ tableColumns }: BuilderProps) {
               </div>
             </div>
           )}
-          {showDiagram && !printMode && data && (
-            <div className="rounded-lg border border-slate-200 bg-white p-4">
-              <div className="text-xs font-semibold uppercase text-slate-500">
-                Pattern diagram
-              </div>
-              <PatternDiagram
-                holes={currentParams.holes}
-                rows={data.rows}
-                visibleRows={highlightRows}
-                startRimHole={currentParams.startRimHole}
-                valveReference={currentParams.valveReference}
-                hoveredSpoke={hoveredSpoke}
-              />
-            </div>
-          )}
           <ComputeStatus
             loading={loading}
             error={error}
@@ -385,15 +381,116 @@ export default function Builder({ tableColumns }: BuilderProps) {
             onRetry={() => handleParamsChange(currentParams)}
           />
           {data ? (
-            <PatternTable
-              rows={data.rows}
-              printMode={printMode}
-              onVisibleRowsChange={setVisibleRows}
-              onHighlightRowsChange={setHighlightRows}
-              onHoverSpokeChange={setHoveredSpoke}
-              sideFilter={sideFilter}
-              columnVisibility={tableColumns}
-            />
+            <>
+              {resultsView === "both" && (
+                <div
+                  className={
+                    splitView && !printMode
+                      ? "grid gap-4 2xl:grid-cols-[minmax(420px,0.9fr)_minmax(640px,1.1fr)]"
+                      : "space-y-4"
+                  }
+                >
+                  {!printMode && (
+                    <Card>
+                      <CardContent>
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="text-xs font-semibold uppercase text-slate-500">
+                            Pattern diagram
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              document
+                                .getElementById("pattern-table")
+                                ?.scrollIntoView({
+                                  behavior: "smooth",
+                                  block: "start",
+                                })
+                            }
+                            className="text-xs font-semibold text-slate-600 hover:text-slate-900"
+                          >
+                            Jump to table
+                          </button>
+                        </div>
+                        <div className="mt-3 max-w-full">
+                          <PatternDiagram
+                            holes={currentParams.holes}
+                            rows={data.rows}
+                            visibleRows={highlightRows}
+                            startRimHole={currentParams.startRimHole}
+                            valveReference={currentParams.valveReference}
+                            hoveredSpoke={hoveredSpoke}
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                  <Card>
+                    <CardContent className="space-y-3">
+                      <div
+                        id="pattern-table"
+                        className="text-xs font-semibold uppercase text-slate-500"
+                      >
+                        Pattern table
+                      </div>
+                      <div className="overflow-x-auto">
+                        <PatternTable
+                          rows={data.rows}
+                          printMode={printMode}
+                          onVisibleRowsChange={setVisibleRows}
+                          onHighlightRowsChange={setHighlightRows}
+                          onHoverSpokeChange={setHoveredSpoke}
+                          sideFilter={sideFilter}
+                          columnVisibility={tableColumns}
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+              {resultsView === "diagram" && !printMode && (
+                <Card>
+                  <CardContent>
+                    <div className="text-xs font-semibold uppercase text-slate-500">
+                      Pattern diagram
+                    </div>
+                    <div className="mt-3 max-w-full">
+                      <PatternDiagram
+                        holes={currentParams.holes}
+                        rows={data.rows}
+                        visibleRows={highlightRows}
+                        startRimHole={currentParams.startRimHole}
+                        valveReference={currentParams.valveReference}
+                        hoveredSpoke={hoveredSpoke}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              {resultsView === "table" && (
+                <Card>
+                  <CardContent className="space-y-3">
+                    <div
+                      id="pattern-table"
+                      className="text-xs font-semibold uppercase text-slate-500"
+                    >
+                      Pattern table
+                    </div>
+                    <div className="overflow-x-auto">
+                      <PatternTable
+                        rows={data.rows}
+                        printMode={printMode}
+                        onVisibleRowsChange={setVisibleRows}
+                        onHighlightRowsChange={setHighlightRows}
+                        onHoverSpokeChange={setHoveredSpoke}
+                        sideFilter={sideFilter}
+                        columnVisibility={tableColumns}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </>
           ) : (
             <div className="rounded-lg border border-dashed border-slate-300 bg-white p-6 text-sm text-slate-500">
               Pick your wheel basics to generate a pattern.

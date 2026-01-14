@@ -22,6 +22,12 @@ export function CardDescription({ children }: { children: ReactNode }) {
   return <p className="mt-1 text-sm text-slate-600">{children}</p>;
 }
 
-export function CardContent({ children }: { children: ReactNode }) {
-  return <div className="px-4 py-4">{children}</div>;
+export function CardContent({
+  children,
+  className = "",
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return <div className={`px-4 py-4 ${className}`}>{children}</div>;
 }

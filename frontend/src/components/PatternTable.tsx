@@ -463,9 +463,9 @@ export default function PatternTable({
             </div>
           </div>
 
-          <div className="overflow-auto rounded-lg border border-slate-200 bg-white">
+          <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
             <table
-              className={`min-w-full text-left ${printMode ? "text-sm" : "text-xs"}`}
+              className={`w-full min-w-[720px] text-left ${printMode ? "text-sm" : "text-xs"}`}
             >
               <thead className="sticky top-0 z-10 bg-slate-100 text-[11px] uppercase tracking-wide text-slate-600">
                 {table.getHeaderGroups().map((headerGroup) => (
