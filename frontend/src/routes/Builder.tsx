@@ -6,6 +6,7 @@ import PatternDiagram from "../components/PatternDiagram";
 import PatternTable from "../components/PatternTable";
 import PresetBar from "../components/PresetBar";
 import SchranerIntro from "../components/SchranerIntro";
+import ComputeStatus from "../components/ComputeStatus";
 import { Card, CardContent } from "../components/ui/Card";
 import {
   computePattern,
@@ -62,6 +63,7 @@ export default function Builder({ tableColumns }: BuilderProps) {
   const [data, setData] = useState<PatternResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [presetError, setPresetError] = useState<string | null>(null);
   const [presets, setPresets] = useState<PresetSummary[]>([]);
   const [presetBusy, setPresetBusy] = useState(false);
@@ -86,6 +88,7 @@ export default function Builder({ tableColumns }: BuilderProps) {
     try {
       const response = await computePattern(params);
       setData(response);
+      setLastUpdated(new Date());
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unexpected error");
     } finally {
@@ -374,16 +377,13 @@ export default function Builder({ tableColumns }: BuilderProps) {
               />
             </div>
           )}
-          <div className="flex items-center gap-3">
-            {loading && (
-              <div className="text-sm text-slate-600">Loading pattern...</div>
-            )}
-            {error && (
-              <div className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
-                {error}
-              </div>
-            )}
-          </div>
+          <ComputeStatus
+            loading={loading}
+            error={error}
+            rowCount={data?.rows.length ?? null}
+            lastUpdated={lastUpdated}
+            onRetry={() => handleParamsChange(currentParams)}
+          />
           {data ? (
             <PatternTable
               rows={data.rows}
@@ -396,7 +396,7 @@ export default function Builder({ tableColumns }: BuilderProps) {
             />
           ) : (
             <div className="rounded-lg border border-dashed border-slate-300 bg-white p-6 text-sm text-slate-500">
-              Waiting for parameters...
+              Pick your wheel basics to generate a pattern.
             </div>
           )}
         </div>
