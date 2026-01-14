@@ -38,13 +38,14 @@ If you follow the **Order** column from top to bottom, you’ll always place the
 
 ## Quick start (do this at the bench)
 
-1. Choose your **Holes**, **Wheel type**, and **Crosses** (e.g. 32H rear 3x).
-2. Turn on **Next step mode** (highly recommended).
-3. Start at **R1** and place the **two reference spokes at the valve**.
-4. Click **Next step** → **R2** and place the spokes listed (odd set fill).
-5. Click **Next step** → **R3** and place the spokes listed (even set weave).
-6. Flip the wheel and repeat for NDS (**L1 → L3 → L4**).
-7. Use **Print view** (paper reference) or **Export CSV** (build record).
+1. Pick your **Holes** from the top bar (each hole count has its own page).
+2. Choose **Wheel type** and **Crosses** (e.g. 32H rear 3x).
+3. Turn on **Next step mode** (highly recommended).
+4. Start at **R1** and place the **two reference spokes at the valve**.
+5. Click **Next step** → **R2** and place the spokes listed (odd set fill).
+6. Click **Next step** → **R3** and place the spokes listed (even set weave).
+7. Flip the wheel and repeat for NDS (**L1 → L3 → L4**).
+8. Use **Print view** (paper reference) or **Export CSV** (build record).
 
 **Row-by-row rule:**  
 **Hub hole → Heads IN/OUT → Rim hole → nipple on a few turns**
@@ -135,7 +136,7 @@ Just follow the **Order** column row-by-row.
 ## Parameters (what each one changes)
 
 ### Holes
-Total holes in rim/hub: 20 / 24 / 28 / 32 / 36.
+Now selected from the **top bar**. Each hole count is a dedicated Builder page.
 
 ### Wheel type
 Rear vs Front.  
@@ -164,6 +165,13 @@ Whether the “start rim hole” is interpreted at the valve as:
 
 ### Start hub hole (DS / NDS)
 Rotates the pattern around each flange to match your physical starting point.
+
+### DS/NDS (table filter)
+Filters the visible table rows by side. **All** shows both.
+
+### Settings (table columns)
+Use the **Settings** page in the top bar to hide or show columns like Order,
+Step, Side, Odd/Even set, K, and Notes.
 
 ---
 

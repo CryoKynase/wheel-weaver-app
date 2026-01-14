@@ -47,7 +47,7 @@ export default function Readme() {
       )}
 
       {!loading && !error && (
-        <article className="prose max-w-none">
+        <article className="prose max-w-none prose-hr:border-slate-300 prose-hr:border-t-2">
           <ReactMarkdown>{markdown}</ReactMarkdown>
         </article>
       )}
