@@ -128,17 +128,6 @@ export default function PresetBar({
           ) : (
             <Badge variant="neutral">No preset selected</Badge>
           )}
-          {!selectedPresetId && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleOpenSave}
-              disabled={busy}
-            >
-              Save as…
-            </Button>
-          )}
         </div>
         {presetError && (
           <div className="mt-2 rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive">
