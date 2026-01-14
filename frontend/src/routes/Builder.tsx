@@ -559,7 +559,7 @@ export default function Builder({ tableColumns }: BuilderProps) {
               onValueChange={(value) =>
                 setResultsTab(value as "table" | "diagram" | "both")
               }
-              className="space-y-4"
+              className="space-y-3"
             >
               <TabsList className="flex flex-wrap gap-2 bg-transparent p-0">
                 <TabsTrigger
@@ -591,7 +591,7 @@ export default function Builder({ tableColumns }: BuilderProps) {
                   id="pattern-table"
                   className="border-l-4 border-l-primary/40 transition-all duration-200 ease-out"
                 >
-                  <CardHeader className="flex items-center justify-between gap-3 border-b border-border bg-muted/40 py-2">
+                  <CardHeader className="flex items-center justify-between gap-2 border-b border-border bg-muted/40 py-1.5">
                     <div className="text-xs font-semibold uppercase text-slate-500">
                       Table
                     </div>
@@ -625,7 +625,7 @@ export default function Builder({ tableColumns }: BuilderProps) {
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </CardHeader>
-                  <CardContent className="space-y-3 pt-2">
+                  <CardContent className="space-y-3 pt-1.5">
                     <div className="overflow-x-auto rounded-md border border-slate-200 bg-white">
                       <PatternTable
                         rows={data.rows}
@@ -649,7 +649,7 @@ export default function Builder({ tableColumns }: BuilderProps) {
               >
                 {!printMode && (
                   <Card className="border-l-4 border-l-primary/40 transition-all duration-200 ease-out">
-                    <CardHeader className="flex items-center justify-between gap-2 border-b border-border bg-muted/40 py-2">
+                    <CardHeader className="flex items-center justify-between gap-2 border-b border-border bg-muted/40 py-1.5">
                       <div className="flex items-center gap-2 text-xs font-semibold uppercase text-slate-500">
                         Diagram
                         {sideFilter !== "All" && (
@@ -663,7 +663,7 @@ export default function Builder({ tableColumns }: BuilderProps) {
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="h-7 px-2 text-xs text-primary underline-offset-4 hover:bg-primary/10 hover:text-primary hover:underline"
+                        className="h-6 px-2 text-[11px] text-primary underline-offset-4 hover:bg-primary/10 hover:text-primary hover:underline"
                         aria-label="Jump to the pattern table"
                         onClick={() => {
                           setResultsTab("table");
@@ -680,7 +680,7 @@ export default function Builder({ tableColumns }: BuilderProps) {
                         Jump to table
                       </Button>
                     </CardHeader>
-                    <CardContent className="pt-2">
+                    <CardContent className="pt-1.5">
                       <p className="text-xs text-slate-600 lg:hidden">
                         Hover a row in the table to highlight it here.
                       </p>
@@ -719,10 +719,10 @@ export default function Builder({ tableColumns }: BuilderProps) {
                 value="both"
                 className="transition-all duration-200 data-[state=inactive]:translate-y-1 data-[state=inactive]:opacity-0 data-[state=active]:translate-y-0 data-[state=active]:opacity-100"
               >
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {!printMode && (
                     <Card className="border-l-4 border-l-primary/40 transition-all duration-200 ease-out">
-                      <CardHeader className="flex items-center justify-between gap-2 border-b border-border bg-muted/40 py-2">
+                      <CardHeader className="flex items-center justify-between gap-2 border-b border-border bg-muted/40 py-1.5">
                         <div className="flex items-center gap-2 text-xs font-semibold uppercase text-slate-500">
                           Diagram
                           {sideFilter !== "All" && (
@@ -736,7 +736,7 @@ export default function Builder({ tableColumns }: BuilderProps) {
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className="h-7 px-2 text-xs text-primary underline-offset-4 hover:bg-primary/10 hover:text-primary hover:underline"
+                          className="h-6 px-2 text-[11px] text-primary underline-offset-4 hover:bg-primary/10 hover:text-primary hover:underline"
                           aria-label="Jump to the pattern table"
                           onClick={() =>
                             document
@@ -750,7 +750,7 @@ export default function Builder({ tableColumns }: BuilderProps) {
                           Jump to table
                         </Button>
                       </CardHeader>
-                      <CardContent className="pt-2">
+                      <CardContent className="pt-1.5">
                         <p className="text-xs text-slate-600 lg:hidden">
                           Hover a row in the table to highlight it here.
                         </p>
@@ -788,7 +788,7 @@ export default function Builder({ tableColumns }: BuilderProps) {
                     id="pattern-table-both"
                     className="border-l-4 border-l-primary/40 transition-all duration-200 ease-out"
                   >
-                    <CardHeader className="flex items-center justify-between gap-3 border-b border-border bg-muted/40 py-2">
+                    <CardHeader className="flex items-center justify-between gap-2 border-b border-border bg-muted/40 py-1.5">
                       <div className="text-xs font-semibold uppercase text-slate-500">
                         Table
                       </div>
@@ -822,7 +822,7 @@ export default function Builder({ tableColumns }: BuilderProps) {
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </CardHeader>
-                    <CardContent className="space-y-3 pt-2">
+                    <CardContent className="space-y-3 pt-1.5">
                       <div className="overflow-auto rounded-md border border-slate-200 bg-white lg:max-h-[calc(100vh-420px)]">
                         <PatternTable
                           rows={data.rows}

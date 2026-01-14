@@ -34,7 +34,7 @@ export default function SchranerIntro() {
           type="button"
           onClick={toggle}
           variant="ghost"
-          className="h-auto w-full justify-start p-0 text-left hover:bg-transparent"
+          className="h-auto w-full flex-col items-start justify-start gap-1 p-0 text-left hover:bg-transparent"
           aria-expanded={expanded}
           aria-controls={contentId}
         >
