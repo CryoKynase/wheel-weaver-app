@@ -15,10 +15,10 @@ class _Context:
 
 
 def _effective_start_rim_hole(req: PatternRequest) -> int:
-    if req.valveReference == "right_of_valve":
-        return req.startRimHole
     n = req.holes
-    return ((req.startRimHole - 2) % n) + 1
+    if req.valveReference == "right_of_valve":
+        return ((req.startRimHole - 2) % n) + 1
+    return req.startRimHole
 
 
 def _rim_hole_for_k(ctx: _Context, side: str, k: int) -> int:
@@ -70,8 +70,6 @@ def compute_pattern(req: PatternRequest) -> PatternResponse:
 
     effective_start = _effective_start_rim_hole(req)
     ctx = _Context(req=req, n=n, h=h, effective_start_rim_hole=effective_start)
-    valve_right = effective_start
-    valve_left = ((valve_right - 2) % n) + 1
 
     crosses_desc = _crosses_described(req.crosses)
     asym_note = None
@@ -84,11 +82,10 @@ def compute_pattern(req: PatternRequest) -> PatternResponse:
         step: str,
         notes: str,
         order: int,
-        rim_hole_override: int | None = None,
     ) -> PatternRow:
         odd_even = _odd_even_set(hub_hole_index)
         k = _k_for_hub_hole(hub_hole_index, req.crosses, side, h)
-        rim_hole = rim_hole_override or _rim_hole_for_k(ctx, side, k)
+        rim_hole = _rim_hole_for_k(ctx, side, k)
         if side == "DS":
             physical = _physical_hub_hole(hub_hole_index, req.startHubHoleDS, h)
         else:
@@ -128,7 +125,6 @@ def compute_pattern(req: PatternRequest) -> PatternResponse:
             "R1",
             "Reference at valve (valve-left)",
             order_counter,
-            rim_hole_override=valve_left,
         )
     )
     order_counter += 1
@@ -145,7 +141,6 @@ def compute_pattern(req: PatternRequest) -> PatternResponse:
             "R1",
             "Second reference at valve (valve-right)",
             order_counter,
-            rim_hole_override=valve_right,
         )
     )
     order_counter += 1
@@ -167,7 +162,6 @@ def compute_pattern(req: PatternRequest) -> PatternResponse:
             "L1",
             "NDS start reference (valve-right)",
             order_counter,
-            rim_hole_override=valve_right,
         )
     )
     order_counter += 1
@@ -179,7 +173,6 @@ def compute_pattern(req: PatternRequest) -> PatternResponse:
             "L1",
             "Second reference (valve-left)",
             order_counter,
-            rim_hole_override=valve_left,
         )
     )
     order_counter += 1
@@ -187,6 +180,17 @@ def compute_pattern(req: PatternRequest) -> PatternResponse:
     add_rows("NDS", nds_remaining_odd, "L3", "Odd set fill")
     remaining_nds_even = [idx for idx in even_indices if idx != nds_second_ref_idx]
     add_rows("NDS", remaining_nds_even, "L4", "Even set weave")
+
+    rim_holes = [row.rimHole for row in rows]
+    counts = {hole: rim_holes.count(hole) for hole in set(rim_holes)}
+    missing = [hole for hole in range(1, n + 1) if hole not in counts]
+    duplicates = {hole: count for hole, count in counts.items() if count > 1}
+    if req.holes == 32:
+        print("rimHole list:", rim_holes)
+        print("distinct count:", len(counts))
+        print("missing:", missing)
+        print("duplicates:", duplicates)
+        assert not missing and not duplicates
 
     derived = {
         "H": h,
