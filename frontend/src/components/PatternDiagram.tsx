@@ -272,16 +272,15 @@ export default function PatternDiagram({
         })}
 
       {Array.from(rimLabelSet).map((hole) => {
-        const offset = hole === 1 ? 18 : 12;
-        const point = pointOnCircle(RIM_RADIUS + offset, rimAngle(holes, hole));
+        const point = pointOnCircle(RIM_RADIUS + 14, rimAngle(holes, hole));
         return (
           <text
             key={`label-${hole}`}
             x={point.x}
             y={point.y}
             textAnchor="middle"
-            fontSize={9}
-            fill="#0f172a"
+            fontSize={8}
+            fill="#94a3b8"
           >
             {hole}
           </text>

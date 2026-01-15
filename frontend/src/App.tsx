@@ -82,32 +82,32 @@ export default function App() {
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <div className="min-h-screen">
         <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
-          <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-4">
+          <div className="grid items-center gap-3 px-6 py-4 sm:grid-cols-[1fr_auto_1fr]">
             <div className="flex flex-wrap items-center gap-4">
               <div className="text-lg font-semibold">Wheel Weaver</div>
-              <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
-                Holes
-                <select
-                  className="rounded-md border border-slate-300 bg-white px-2 py-1 text-sm"
-                  value={selectedHoles}
-                  onChange={(event) => {
-                    const next = Number(event.target.value);
-                    if (Number.isNaN(next) || !isHoleOption(next)) {
-                      return;
-                    }
-                    setSelectedHoles(next);
-                    navigate(isFlowActive ? `/flow/${next}` : `/builder/${next}`);
-                  }}
-                >
-                  {holeOptions.map((holes) => (
-                    <option key={holes} value={holes}>
-                      {holes}
-                    </option>
-                  ))}
-                </select>
-              </label>
             </div>
-            <nav className="flex flex-wrap items-center gap-2">
+            <label className="flex items-center justify-self-center gap-2 text-sm font-medium text-slate-700">
+              Rim Holes
+              <select
+                className="rounded-md border border-slate-300 bg-white px-2 py-1 text-sm"
+                value={selectedHoles}
+                onChange={(event) => {
+                  const next = Number(event.target.value);
+                  if (Number.isNaN(next) || !isHoleOption(next)) {
+                    return;
+                  }
+                  setSelectedHoles(next);
+                  navigate(isFlowActive ? `/flow/${next}` : `/builder/${next}`);
+                }}
+              >
+                {holeOptions.map((holes) => (
+                  <option key={holes} value={holes}>
+                    {holes}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <nav className="flex flex-wrap items-center justify-self-end gap-2">
               <NavLink to={builderPath} className={navLinkClass}>
                 Builder
               </NavLink>

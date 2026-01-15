@@ -367,22 +367,24 @@ export default function Builder({ tableColumns }: BuilderProps) {
         <div>
           <h1 className="text-2xl font-semibold">Builder</h1>
         </div>
-        <div className="text-xs text-slate-500">
-          {presetSummaryLabel
-            ? `Preset: ${presetSummaryLabel}`
-            : `Defaults: ${defaultPatternRequest.holes}H ${defaultPatternRequest.crosses}x`}
-        </div>
+        {presetSummaryLabel ? (
+          <div className="text-xs text-slate-500">
+            {`Preset: ${presetSummaryLabel}`}
+          </div>
+        ) : null}
       </div>
 
-      <SchranerIntro />
+      <div className="!mt-3">
+        <SchranerIntro />
+      </div>
 
-      <div className="space-y-6 lg:grid lg:grid-cols-[380px_1fr] lg:gap-6 lg:space-y-0">
+      <div className="!mt-3 space-y-6 lg:grid lg:grid-cols-[380px_1fr] lg:gap-6 lg:space-y-0">
         {!printMode && (
           <aside className="space-y-4 no-print">
             <div className="space-y-3 lg:hidden">
               <Card>
                 <details className="group">
-                  <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-slate-900">
+                  <summary className="cursor-pointer px-4 pb-3 pt-4 text-sm font-semibold text-slate-900">
                     Parameters
                   </summary>
                   <div className="px-4 pb-4">
@@ -421,7 +423,7 @@ export default function Builder({ tableColumns }: BuilderProps) {
             </div>
             <div className="hidden space-y-4 lg:block lg:sticky lg:top-20">
               <Card>
-                <CardContent>
+                <CardContent className="pt-4">
                   <ParamPanel
                     holes={holes}
                     onParamsChange={handleParamsChange}
