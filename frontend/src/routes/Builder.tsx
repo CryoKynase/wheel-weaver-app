@@ -109,6 +109,7 @@ export default function Builder({ tableColumns }: BuilderProps) {
   const [resultsTab, setResultsTab] = useState<"table" | "diagram" | "both">(
     "both"
   );
+  const [showDiagramLabels, setShowDiagramLabels] = useState(false);
   const [visibleRows, setVisibleRows] = useState<PatternRow[]>([]);
   const [highlightRows, setHighlightRows] = useState<PatternRow[]>([]);
   const [hoveredSpoke, setHoveredSpoke] = useState<string | null>(null);
@@ -670,22 +671,30 @@ export default function Builder({ tableColumns }: BuilderProps) {
                           startRimHole={currentParams.startRimHole}
                           valveReference={currentParams.valveReference}
                           hoveredSpoke={hoveredSpoke}
+                          showLabels={showDiagramLabels}
                         />
                         <div className="hidden space-y-3 text-xs text-slate-600 lg:block">
                           <div className="text-[11px] font-semibold uppercase text-slate-500">
                             How to read this
                           </div>
                           <p>
-                            Each line is a spoke path. Hover rows in the table to
-                            highlight them here.
+                            Each line is a spoke path. Switch to Table or Both
+                            to filter steps or focus a specific spoke.
                           </p>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-700">
-                              DS
-                            </span>
-                            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-700">
-                              NDS
-                            </span>
+                          <div className="flex justify-end">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className={`h-6 px-2 text-[11px] ${
+                                showDiagramLabels
+                                  ? "border-primary/40 bg-primary/10 text-foreground"
+                                  : "text-muted-foreground hover:bg-accent/40 hover:text-foreground"
+                              }`}
+                              onClick={() => setShowDiagramLabels((prev) => !prev)}
+                            >
+                              Labels
+                            </Button>
                           </div>
                           <div className="pt-1 text-[11px] font-semibold uppercase text-slate-500">
                             Spoke: {hoveredSpoke ?? "—"}
@@ -704,14 +713,14 @@ export default function Builder({ tableColumns }: BuilderProps) {
                   {!printMode && (
                     <Card className="border-l-4 border-l-primary/40 transition-all duration-200 ease-out">
                       <CardHeader className="flex flex-wrap items-center gap-2 border-b border-border bg-muted/40 py-1.5">
-                        <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase text-slate-500">
-                          {sideFilter !== "All" && (
-                            <Badge variant="neutral">Filter: {sideFilter}</Badge>
-                          )}
-                        </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
+                      <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase text-slate-500">
+                        {sideFilter !== "All" && (
+                          <Badge variant="neutral">Filter: {sideFilter}</Badge>
+                        )}
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
                           size="sm"
                           className="h-6 px-2 text-[11px] text-primary underline-offset-4 hover:bg-primary/10 hover:text-primary hover:underline sm:ml-auto"
                           aria-label="Jump to the pattern table"
@@ -731,7 +740,7 @@ export default function Builder({ tableColumns }: BuilderProps) {
                         <div className="relative">
                           <Badge
                             variant="neutral"
-                            className={`pointer-events-none absolute right-3 top-3 transition-opacity duration-150 ${
+                            className={`pointer-events-none absolute left-3 top-3 transition-opacity duration-150 ${
                               hoveredSpoke ? "opacity-100" : "opacity-0"
                             }`}
                           >
@@ -748,6 +757,7 @@ export default function Builder({ tableColumns }: BuilderProps) {
                               startRimHole={currentParams.startRimHole}
                               valveReference={currentParams.valveReference}
                               hoveredSpoke={hoveredSpoke}
+                              showLabels={showDiagramLabels}
                             />
                             <div className="hidden space-y-3 text-xs text-slate-600 lg:block">
                               <div className="text-[11px] font-semibold uppercase text-slate-500">
@@ -757,13 +767,20 @@ export default function Builder({ tableColumns }: BuilderProps) {
                                 Each line is a spoke path. Hover rows in the table to
                                 highlight them here.
                               </p>
-                              <div className="flex flex-wrap items-center gap-2">
-                                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-700">
-                                  DS
-                                </span>
-                                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-700">
-                                  NDS
-                                </span>
+                              <div className="flex justify-end">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  className={`h-6 px-2 text-[11px] ${
+                                    showDiagramLabels
+                                      ? "border-primary/40 bg-primary/10 text-foreground"
+                                      : "text-muted-foreground hover:bg-accent/40 hover:text-foreground"
+                                  }`}
+                                  onClick={() => setShowDiagramLabels((prev) => !prev)}
+                                >
+                                  Labels
+                                </Button>
                               </div>
                             </div>
                           </div>

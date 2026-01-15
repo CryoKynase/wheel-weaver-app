@@ -7,6 +7,7 @@ export type PatternDiagramProps = {
   startRimHole: number;
   valveReference: "right_of_valve" | "left_of_valve";
   hoveredSpoke?: string | null;
+  showLabels?: boolean;
 };
 
 const RIM_RADIUS = 160;
@@ -64,6 +65,7 @@ export default function PatternDiagram({
   startRimHole,
   valveReference,
   hoveredSpoke,
+  showLabels = false,
 }: PatternDiagramProps) {
   const h = holes / 2;
   const hubStep = 360 / h;
@@ -99,6 +101,19 @@ export default function PatternDiagram({
 
   return (
     <svg viewBox="-220 -220 440 440" className="w-full h-[360px]">
+      <defs>
+        <marker
+          id="diagram-arrow"
+          viewBox="0 0 10 10"
+          refX="8"
+          refY="5"
+          markerWidth="6"
+          markerHeight="6"
+          orient="auto"
+        >
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8" />
+        </marker>
+      </defs>
       {rows.map((row) => {
         const rim = pointOnCircle(RIM_RADIUS, rimAngle(holes, row.rimHole));
         const hubAngleOffset = row.side === "DS" ? baseAngleDS : baseAngleNDS;
@@ -161,6 +176,74 @@ export default function PatternDiagram({
       <text x={-HUB_OFFSET - NDS_FLANGE_RADIUS - 18} y={-8} fontSize={10} fill="#334155">
         NDS
       </text>
+
+      {showLabels && (
+        <g>
+          <line
+            x1={0}
+            y1={-190}
+            x2={0}
+            y2={-RIM_RADIUS - 6}
+            stroke="#94a3b8"
+            strokeWidth={1.2}
+            markerEnd="url(#diagram-arrow)"
+          />
+          <text x={0} y={-202} textAnchor="middle" fontSize={10} fill="#64748b">
+            Rim
+          </text>
+
+          <line
+            x1={HUB_OFFSET + DS_FLANGE_RADIUS + 70}
+            y1={-8}
+            x2={HUB_OFFSET + DS_FLANGE_RADIUS}
+            y2={-8}
+            stroke="#94a3b8"
+            strokeWidth={1.2}
+            markerEnd="url(#diagram-arrow)"
+          />
+          <text
+            x={HUB_OFFSET + DS_FLANGE_RADIUS + 74}
+            y={-12}
+            textAnchor="start"
+            fontSize={10}
+            fill="#64748b"
+          >
+            DS Hub
+          </text>
+
+          <line
+            x1={-HUB_OFFSET - NDS_FLANGE_RADIUS - 70}
+            y1={-8}
+            x2={-HUB_OFFSET - NDS_FLANGE_RADIUS}
+            y2={-8}
+            stroke="#94a3b8"
+            strokeWidth={1.2}
+            markerEnd="url(#diagram-arrow)"
+          />
+          <text
+            x={-HUB_OFFSET - NDS_FLANGE_RADIUS - 74}
+            y={-12}
+            textAnchor="end"
+            fontSize={10}
+            fill="#64748b"
+          >
+            NDS Hub
+          </text>
+
+          <line
+            x1={170}
+            y1={60}
+            x2={100}
+            y2={22}
+            stroke="#94a3b8"
+            strokeWidth={1.2}
+            markerEnd="url(#diagram-arrow)"
+          />
+          <text x={176} y={64} textAnchor="start" fontSize={10} fill="#64748b">
+            Spoke
+          </text>
+        </g>
+      )}
 
       {Array.from({ length: holes }, (_, idx) => {
         const hole = idx + 1;

@@ -31,6 +31,25 @@ def readme() -> dict:
         # Wheel Weaver Guide
         **Schraner workshop method - written for the bench**
 
+        The Wheel Weaver app is built around the Schraner Lacing Method because
+        it is one of the most reliable ways to lace a wheel without getting
+        lost, misplacing spokes, or having to constantly "undo and guess"
+        halfway through. In simple terms, the Schraner method treats wheel
+        building like a repeatable sequence: you place spokes in a deliberate
+        order, using consistent rules about which hole comes next, which spoke
+        set you are working on, and whether the spoke goes heads-in or
+        heads-out. Instead of thinking "where does this spoke go?" forty times
+        in a row, you follow a structured pattern that naturally produces the
+        correct crossings and a clean, consistent result. That is why this app
+        is organised the way it is: it does not just show you a finished lacing
+        diagram - it walks you through the build as a series of small,
+        dependable steps, grouped into logical sets (so you always know which
+        spokes you are dealing with) and using repeatable indexing (so every
+        spoke placement is unambiguous). The goal is to make lacing faster,
+        calmer, and less error-prone, especially when you are working with
+        higher spoke counts, unfamiliar drilling, or patterns that are easy to
+        mix up by eye.
+
         Wheel Weaver generates a **step-by-step lacing table** and a matching
         **diagram/flowchart** using the Schraner workshop sequence:
 
@@ -101,7 +120,7 @@ def readme() -> dict:
         If your hub has no reference mark:
         - Pick any physical hole as "1".
         - If your hub has a readable band name on it, conventon states that the rider
-        - when seated on the bike should be able to read the label so it reads from NDS to DS.
+          when seated on the bike should be able to read the label so it reads from NDS to DS.
         - Use **Start hub hole (DS/NDS)** to rotate the pattern to match your build.
 
         ---
@@ -145,6 +164,124 @@ def readme() -> dict:
         ### Print view
         - Forces the table view and adds a parameter summary.
         - Intended for a clean bench reference.
+
+        ---
+
+        ## Glossary (table columns for beginners)
+
+        ### Step (R1, R2, R3, L1, L3, L4)
+
+        **What it is:**
+        Step tells you which phase of the Schraner workshop sequence you are
+        currently in. Think of it like chapters in a recipe. The steps are
+        ordered to make the lacing fast, repeatable, and hard to mess up.
+
+        **Why it exists:**
+        When you lace a wheel "randomly", it is easy to:
+        - put a spoke into the wrong hub hole
+        - hit the wrong rim hole near the valve
+        - end up with awkward valve access
+
+        Schraner avoids that by using a fixed bench sequence. You place a couple
+        of key reference spokes first, then fill the wheel in tidy batches.
+
+        **How to use it in the app:**
+        - The table is already in lacing order (Order column).
+        - Step groups spokes into the batches you will lace in one go.
+        - In Next step mode, you are walking step-by-step through Schraner.
+
+        **What the letters mean (plain English):**
+        - R steps = one side's sequence (this aligns to the DS-first workflow)
+        - L steps = the other side's sequence (mirrors the opposite flange)
+
+        You do not need to overthink the letters - treat Step as:
+        do these rows now, in this batch.
+
+        **What changes between steps:**
+        - Heads (IN/OUT) patterns change (Schraner alternates orientation)
+        - Rim holes jump in predictable spacing (subset fills)
+        - Hub holes are split into Odd and Even sets (see below)
+
+        ### Odd/Even set
+
+        **What it is:**
+        This tells you which hub hole set a spoke is using on that flange. On a
+        flange with holes numbered 1..H, there are two alternating sets:
+        - Odd set: 1, 3, 5, 7, ...
+        - Even set: 2, 4, 6, 8, ...
+
+        **Why this matters:**
+        On a real hub flange, the holes alternate around the circle. If you use
+        every other hole, you get consistent spacing that makes the lacing
+        pattern "click" into place without fighting it.
+
+        Schraner uses this on purpose:
+        - you place key reference spokes using one set first
+        - then fill the remaining spokes in a structured way
+
+        **Beginner mental model:**
+        Imagine the flange holes are every other seat around a table.
+        Odds sit in one set of seats. Evens sit in the seats between them.
+        The app tells you which seats you are using for the spoke you install.
+
+        **Why it helps beginners:**
+        If you grab the wrong set, things start to feel off: the spoke wants the
+        wrong rim hole, the valve area gets messy, or you feel forced. Odd/Even
+        is one of the best "am I on track?" checks.
+
+        ### K (the index within the set)
+
+        **What it is:**
+        K is the counter within the Odd or Even set. It starts at 1 and counts
+        upward as you fill that set.
+
+        If your flange has H holes:
+        - there are H/2 spokes in the odd set
+        - there are H/2 spokes in the even set
+        - K counts within whichever set you are in
+
+        Example on a 32H wheel:
+        - N = 32 total holes
+        - H = 16 holes per flange
+        - Odd set has 8 holes (1,3,5,7,9,11,13,15)
+        - Even set has 8 holes (2,4,6,8,10,12,14,16)
+
+        So:
+        - Odd K=1 means "the first odd-set spoke"
+        - Odd K=2 means "the second odd-set spoke"
+        - ... up to Odd K=8 (and the same for Even)
+
+        **Why the app shows K:**
+        K is the engine behind the pattern being repeatable. It lets the app
+        compute which hub hole you are on within that set, and which rim hole
+        corresponds to that spoke, using simple stepping rules and wrap-around.
+
+        Practical workshop use:
+        If you get interrupted, K is a great way to resume:
+        "I am on DS, Odd set, K=5... next one is K=6."
+
+        ### Heads (IN / OUT)
+
+        **What it is:**
+        This tells you the spoke head orientation at the hub flange:
+        - OUT = spoke head is on the outside of the flange (outside -> inside)
+        - IN = spoke head is on the inside of the flange (inside -> outside)
+
+        **Why it matters:**
+        Heads orientation affects how spokes lie, clearance at the flange, and
+        how tidy and consistent the build feels. Schraner uses a consistent
+        heads-in/heads-out scheme so the spoke line stays smooth.
+
+        **Beginner: how do I physically do it?**
+        - OUT: push the spoke through the hub hole from the outside.
+        - IN: insert the spoke from the inside.
+
+        Very important: Heads IN/OUT is about the hub, not the rim.
+
+        **What about "Invert heads"?**
+        That switch flips the rule (IN becomes OUT and vice versa). Some builders
+        prefer the opposite convention for certain hubs or aesthetics. If you are
+        learning, leave it off and just follow the app.
 
         ---
 
