@@ -1,11 +1,10 @@
 from datetime import datetime
-from email.message import EmailMessage
 import logging
 import os
 import re
-import smtplib
 import textwrap
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlmodel import Session, select
@@ -48,16 +47,13 @@ def send_contact(payload: ContactIn) -> dict:
         raise HTTPException(status_code=400, detail="Invalid email address")
 
     to_email = os.getenv("CONTACT_TO_EMAIL", "rlglazer@gmail.com")
-    smtp_host = os.getenv("SMTP_HOST")
-    smtp_port = int(os.getenv("SMTP_PORT", "587"))
-    smtp_user = os.getenv("SMTP_USERNAME")
-    smtp_pass = os.getenv("SMTP_PASSWORD")
-    smtp_from = os.getenv("SMTP_FROM") or smtp_user or to_email
+    resend_api_key = os.getenv("RESEND_API_KEY")
+    resend_from = os.getenv("RESEND_FROM") or "WheelWeaver Contact <no-reply@wheelweaver.app>"
 
-    if not smtp_host or not smtp_user or not smtp_pass:
+    if not resend_api_key:
         raise HTTPException(
             status_code=500,
-            detail="Email is not configured on the server (missing SMTP settings).",
+            detail="Email is not configured on the server (missing RESEND_API_KEY).",
         )
 
     subject = f"WheelWeaver contact: {name}"
@@ -69,26 +65,30 @@ def send_contact(payload: ContactIn) -> dict:
         f"{message}\n"
     )
 
-    msg = EmailMessage()
-    msg["Subject"] = subject
-    msg["From"] = smtp_from
-    msg["To"] = to_email
-    msg["Reply-To"] = email
-    msg.set_content(body)
-
     try:
-        with smtplib.SMTP(smtp_host, smtp_port, timeout=15) as server:
-            server.ehlo()
-            server.starttls()
-            server.ehlo()
-            server.login(smtp_user, smtp_pass)
-            server.send_message(msg)
+        response = httpx.post(
+            "https://api.resend.com/emails",
+            headers={"Authorization": f"Bearer {resend_api_key}"},
+            json={
+                "from": resend_from,
+                "to": [to_email],
+                "subject": subject,
+                "text": body,
+                "reply_to": email,
+            },
+            timeout=15,
+        )
+        if response.status_code >= 300:
+            logger.error(
+                "Contact email failed (status=%s, body=%s)",
+                response.status_code,
+                response.text,
+            )
+            raise HTTPException(status_code=500, detail="Failed to send email.")
         return {"ok": True}
-    except Exception as exc:
+    except httpx.RequestError as exc:
         logger.exception(
-            "Contact email failed (host=%s, port=%s, to=%s)",
-            smtp_host,
-            smtp_port,
+            "Contact email failed (provider=resend, to=%s)",
             to_email,
         )
         raise HTTPException(status_code=500, detail="Failed to send email.") from exc

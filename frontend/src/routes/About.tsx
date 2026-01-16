@@ -97,7 +97,7 @@ export default function About() {
       setState({
         status: "error",
         message:
-          "Sorry — something went wrong sending that. Please try again, or email me directly at rlglazer@gmail.com.",
+          "Sorry — something went wrong sending that. Please try again, or email me directly at richard@richardglazer.com.",
       });
     }
   }
@@ -174,7 +174,7 @@ export default function About() {
 
             <p className="text-xs text-muted-foreground">
               Prefer email? Just write to{" "}
-              <span className="font-medium">rlglazer@gmail.com</span>.
+              <span className="font-medium">richard@richardglazer.com</span>.
             </p>
           </form>
         </CardContent>
