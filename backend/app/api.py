@@ -1,5 +1,6 @@
 from datetime import datetime
 from email.message import EmailMessage
+import logging
 import os
 import re
 import smtplib
@@ -23,6 +24,7 @@ from app.presets import (
 
 router = APIRouter(prefix="/api")
 EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
+logger = logging.getLogger("wheelweaver.contact")
 
 
 class ContactIn(BaseModel):
@@ -83,6 +85,12 @@ def send_contact(payload: ContactIn) -> dict:
             server.send_message(msg)
         return {"ok": True}
     except Exception as exc:
+        logger.exception(
+            "Contact email failed (host=%s, port=%s, to=%s)",
+            smtp_host,
+            smtp_port,
+            to_email,
+        )
         raise HTTPException(status_code=500, detail="Failed to send email.") from exc
 
 
