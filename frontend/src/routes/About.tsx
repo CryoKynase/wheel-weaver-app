@@ -25,7 +25,7 @@ export default function About() {
   const currentYear = new Date().getFullYear();
   const copyright = useMemo(
     () =>
-      `© 2024–${currentYear} WheelWeaver (Richard Glazer). All rights reserved.`,
+      `© 2024–${currentYear} WheelWeaver. All rights reserved.`,
     [currentYear]
   );
 
@@ -97,7 +97,7 @@ export default function About() {
       setState({
         status: "error",
         message:
-          "Sorry — something went wrong sending that. Please try again, or email me directly at richard@richardglazer.com.",
+          "Sorry — something went wrong sending that. Please try again, or email me directly at hello@wheelweaver.com.",
       });
     }
   }
@@ -174,7 +174,7 @@ export default function About() {
 
             <p className="text-xs text-muted-foreground">
               Prefer email? Just write to{" "}
-              <span className="font-medium">richard@richardglazer.com</span>.
+              <span className="font-medium">hello@wheelweaver.com</span>.
             </p>
           </form>
         </CardContent>
@@ -201,8 +201,8 @@ export default function About() {
           <section className="space-y-2">
             <h3 className="text-base font-semibold">Trade marks</h3>
             <p className="text-sm text-muted-foreground">
-              WheelWeaver™ and the WheelWeaver logo are trade marks of Richard
-              Glazer.
+              WheelWeaver™ and the WheelWeaver logo are trade marks of the author.
+              All other trade marks are the property of their respective owners.
             </p>
           </section>
 
