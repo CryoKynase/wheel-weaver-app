@@ -4,6 +4,7 @@ import {
   Navigate,
   Route,
   Routes,
+  Link,
   useLocation,
   useMatch,
   useNavigate,
@@ -13,6 +14,7 @@ import Flow from "./routes/Flow";
 import Readme from "./routes/Readme";
 import About from "./routes/About";
 import Settings from "./routes/Settings";
+import Privacy from "./routes/Privacy";
 import { defaultPatternRequest } from "./lib/defaults";
 import { holeOptions, isHoleOption } from "./lib/holeOptions";
 import {
@@ -26,7 +28,7 @@ import {
 } from "./lib/theme";
 import { Toaster } from "@/components/ui/toaster";
 import ConsentBanner from "./components/ConsentBanner";
-import { applyAnalyticsPreferences, trackPageView } from "./lib/analytics";
+import { initializeAnalytics, trackPageView } from "./lib/analytics";
 
 const linkBase =
   "block rounded-md border border-transparent px-3 py-2 text-sm font-medium transition";
@@ -77,7 +79,7 @@ export default function App() {
   }, [accentThemeId]);
 
   useEffect(() => {
-    applyAnalyticsPreferences();
+    initializeAnalytics();
   }, []);
 
   useEffect(() => {
@@ -187,6 +189,7 @@ export default function App() {
               <Route path="/flow/:holes" element={<Flow />} />
               <Route path="/readme" element={<Readme />} />
               <Route path="/about" element={<About />} />
+              <Route path="/privacy" element={<Privacy />} />
               <Route
                 path="/settings"
                 element={
@@ -202,6 +205,13 @@ export default function App() {
           </div>
         </main>
       </div>
+      <footer className="border-t border-slate-200 bg-white/90 py-6 text-sm text-slate-600">
+        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-4 px-6">
+          <Link to="/privacy" className="underline underline-offset-4">
+            Privacy & cookies
+          </Link>
+        </div>
+      </footer>
       <ConsentBanner />
       <Toaster />
     </div>

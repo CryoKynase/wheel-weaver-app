@@ -5,8 +5,11 @@ const INTERNAL_TRAFFIC_KEY = "wheelweaver.analytics.internal";
 const DEBUG_KEY = "wheelweaver.analytics.debug";
 const CONSENT_GRANTED = "granted";
 const CONSENT_DENIED = "denied";
+const CONSENT_UNSET = "unset";
 
 type AnalyticsParams = Record<string, string | number | boolean | undefined>;
+
+let analyticsReady = false;
 
 declare global {
   interface Window {
@@ -54,6 +57,17 @@ export function hasAnalyticsConsent() {
   return window.localStorage.getItem(CONSENT_KEY) === CONSENT_GRANTED;
 }
 
+export function getAnalyticsConsentStatus() {
+  if (!isBrowser()) {
+    return CONSENT_UNSET;
+  }
+  const stored = window.localStorage.getItem(CONSENT_KEY);
+  if (stored === CONSENT_GRANTED || stored === CONSENT_DENIED) {
+    return stored;
+  }
+  return CONSENT_UNSET;
+}
+
 export function grantAnalyticsConsent() {
   if (!isBrowser()) {
     return;
@@ -64,9 +78,10 @@ export function grantAnalyticsConsent() {
   }
   window.gtag?.("consent", "update", {
     analytics_storage: "granted",
-    ad_storage: "granted",
+    ad_storage: "denied",
   });
   applyAnalyticsPreferences();
+  trackPageView();
 }
 
 export function revokeAnalyticsConsent() {
@@ -116,8 +131,20 @@ export function applyAnalyticsPreferences() {
   });
 }
 
+export function initializeAnalytics() {
+  if (!isBrowser()) {
+    return;
+  }
+  applyAnalyticsPreferences();
+  analyticsReady = true;
+}
+
+export function isAnalyticsReady() {
+  return analyticsReady;
+}
+
 export function trackPageView(path?: string) {
-  if (!isAnalyticsEnabled() || !hasAnalyticsConsent()) {
+  if (!analyticsReady || !isAnalyticsEnabled() || !hasAnalyticsConsent()) {
     return;
   }
   const payload: AnalyticsParams = {
@@ -132,7 +159,7 @@ export function trackPageView(path?: string) {
 }
 
 export function trackEvent(name: string, params?: AnalyticsParams) {
-  if (!isAnalyticsEnabled() || !hasAnalyticsConsent()) {
+  if (!analyticsReady || !isAnalyticsEnabled() || !hasAnalyticsConsent()) {
     return;
   }
   const payload = { ...(params ?? {}) };

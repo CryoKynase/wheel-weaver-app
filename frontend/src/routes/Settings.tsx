@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { tableColumnLabels, type TableColumnVisibility } from "../lib/tableSettings";
 import {
@@ -26,6 +26,18 @@ const columnKeys = Object.keys(tableColumnLabels) as Array<
   keyof TableColumnVisibility
 >;
 
+function shouldShowDevTools(): boolean {
+  if (typeof window === "undefined") return false;
+
+  // Enable temporarily with /settings?admin=1
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("admin") === "1") return true;
+
+  // Or enable persistently per-browser via localStorage
+  return window.localStorage.getItem("wheelweaver.admin") === "true";
+}
+
+
 export default function Settings({
   tableColumns,
   onTableColumnsChange,
@@ -35,6 +47,8 @@ export default function Settings({
   const [consentGranted, setConsentGranted] = useState(false);
   const [internalTraffic, setInternalTraffic] = useState(false);
   const [debugMode, setDebugMode] = useState(false);
+
+  const showDevTools = useMemo(() => shouldShowDevTools(), []);
 
   useEffect(() => {
     setConsentGranted(hasAnalyticsConsent());
@@ -51,7 +65,10 @@ export default function Settings({
         </p>
       </div>
 
-      <div className="rounded-lg border border-slate-200 bg-white p-4">
+      <div
+        id="analytics"
+        className="rounded-lg border border-slate-200 bg-white p-4"
+      >
         <div className="text-xs font-semibold uppercase text-slate-500">
           Accent color
         </div>
@@ -126,7 +143,7 @@ export default function Settings({
           Analytics
         </div>
         <p className="mt-1 text-sm text-slate-600">
-          Manage analytics consent and mark this device as internal traffic.
+          Manage analytics consent.
         </p>
         <div className="mt-4 space-y-3 text-sm text-slate-700">
           <div className="flex flex-wrap items-center gap-3">
@@ -159,35 +176,44 @@ export default function Settings({
             )}
           </div>
 
-          <label className="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2">
-            <span className="font-medium text-slate-700">
-              Mark this device as internal traffic
-            </span>
-            <input
-              type="checkbox"
-              checked={internalTraffic}
-              onChange={(event) => {
-                const nextValue = event.target.checked;
-                setInternalTraffic(nextValue);
-                setInternalTrafficEnabled(nextValue);
-              }}
-            />
-          </label>
+          {showDevTools && (
+            <>
+              <div className="pt-2 text-xs font-semibold uppercase text-slate-500">
+                Developer tools
+              </div>
 
-          <label className="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2">
-            <span className="font-medium text-slate-700">
-              Enable GA4 DebugView events
-            </span>
-            <input
-              type="checkbox"
-              checked={debugMode}
-              onChange={(event) => {
-                const nextValue = event.target.checked;
-                setDebugMode(nextValue);
-                setDebugModeEnabled(nextValue);
-              }}
-            />
-          </label>
+              <label className="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2">
+                <span className="font-medium text-slate-700">
+                  Mark this device as internal traffic
+                </span>
+                <input
+                  type="checkbox"
+                  checked={internalTraffic}
+                  onChange={(event) => {
+                    const nextValue = event.target.checked;
+                    setInternalTraffic(nextValue);
+                    setInternalTrafficEnabled(nextValue);
+                  }}
+                />
+              </label>
+
+              <label className="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2">
+                <span className="font-medium text-slate-700">
+                  Enable GA4 DebugView events
+                </span>
+                <input
+                  type="checkbox"
+                  checked={debugMode}
+                  onChange={(event) => {
+                    const nextValue = event.target.checked;
+                    setDebugMode(nextValue);
+                    setDebugModeEnabled(nextValue);
+                  }}
+                />
+              </label>
+            </>
+          )}
+
         </div>
       </div>
     </section>
