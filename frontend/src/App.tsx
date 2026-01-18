@@ -99,7 +99,11 @@ export default function App() {
         <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
           <div className="grid items-center gap-3 px-6 py-4 sm:grid-cols-[1fr_auto_1fr]">
             <div className="flex flex-wrap items-center gap-4">
-              <div className="flex items-center gap-2">
+              <Link
+                to={builderPath}
+                className="flex items-center gap-2"
+                aria-label="WheelWeaver home"
+              >
                 <img
                   src="/logo-28.png"
                   alt="WheelWeaver logo"
@@ -108,7 +112,7 @@ export default function App() {
                 <div className="text-lg font-semibold tracking-[0.14em]">
                   WHEELWEAVER
                 </div>
-              </div>
+              </Link>
             </div>
             <label className="flex items-center justify-self-center gap-2 text-sm font-medium text-slate-700">
               Rim Holes
