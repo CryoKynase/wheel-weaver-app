@@ -8,6 +8,7 @@ import {
 } from "@tanstack/react-table";
 import { Button } from "@/components/ui/Button";
 
+import { trackEvent } from "../lib/analytics";
 import type { PatternRow } from "../lib/types";
 import type { TableColumnVisibility } from "../lib/tableSettings";
 
@@ -33,6 +34,12 @@ type PatternTableProps = {
   onHoverSpokeChange?: (spoke: string | null) => void;
   sideFilter: "All" | "DS" | "NDS";
   columnVisibility: TableColumnVisibility;
+  analyticsContext?: {
+    holes?: number;
+    crosses?: number;
+    wheelType?: string;
+    symmetry?: string;
+  };
 };
 
 const orderedSteps = ["R1", "R2", "R3", "L1", "L3", "L4"];
@@ -98,6 +105,7 @@ export default function PatternTable({
   onHoverSpokeChange,
   sideFilter,
   columnVisibility,
+  analyticsContext,
 }: PatternTableProps) {
   const [displayMode, setDisplayMode] = useState<DisplayMode>(() => {
     if (typeof window !== "undefined") {
@@ -340,6 +348,13 @@ export default function PatternTable({
     link.download = "pattern.csv";
     link.click();
     URL.revokeObjectURL(url);
+    trackEvent("pattern_export_csv", {
+      row_count: rowsForExport.length,
+      holes: analyticsContext?.holes,
+      crosses: analyticsContext?.crosses,
+      wheel_type: analyticsContext?.wheelType,
+      symmetry: analyticsContext?.symmetry,
+    });
   };
 
   const stepIndex = activeStep ? availableSteps.indexOf(activeStep) : -1;

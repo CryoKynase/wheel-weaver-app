@@ -1,6 +1,24 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-7PLZ4MZWMN"></script>
+    <script>
+      window.__gaEnabled =
+        window.location.hostname !== "localhost" &&
+        window.location.hostname !== "127.0.0.1";
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag("consent", "default", {
+        analytics_storage: "denied",
+        ad_storage: "denied",
+        wait_for_update: 500,
+      });
+      gtag("js", new Date());
+      if (window.__gaEnabled) {
+        gtag("config", "G-7PLZ4MZWMN", { send_page_view: false });
+      }
+    </script>
     <link rel="icon" href="/favicon.ico" sizes="any">
     <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
     <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">

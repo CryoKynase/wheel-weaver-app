@@ -43,6 +43,7 @@ import { isHoleOption } from "../lib/holeOptions";
 import { normalizeParamsForHoles } from "../lib/pattern";
 import type { TableColumnVisibility } from "../lib/tableSettings";
 import { evaluateValveClearance } from "../lib/valveClearance";
+import { trackEvent } from "../lib/analytics";
 import type {
   PatternRequest,
   PatternResponse,
@@ -188,6 +189,9 @@ export default function Builder({ tableColumns }: BuilderProps) {
       try {
         await navigator.clipboard.writeText(toCsv(rows));
         toast({ title: "Copied to clipboard" });
+        trackEvent("pattern_copy_csv", {
+          row_count: rows.length,
+        });
       } catch (err) {
         toast({
           title: "Something went wrong",
@@ -208,6 +212,9 @@ export default function Builder({ tableColumns }: BuilderProps) {
     link.download = "wheel-lacing.csv";
     link.click();
     URL.revokeObjectURL(url);
+    trackEvent("pattern_download_csv", {
+      row_count: rows.length,
+    });
   }, []);
 
   const handleParamsChange = useCallback(async (params: PatternRequest) => {
@@ -218,6 +225,14 @@ export default function Builder({ tableColumns }: BuilderProps) {
       const response = await computePattern(params);
       setData(response);
       setLastUpdated(new Date());
+      trackEvent("pattern_generated", {
+        holes: params.holes,
+        crosses: params.crosses,
+        wheel_type: params.wheelType,
+        symmetry: params.symmetry,
+        invert_heads: params.invertHeads,
+        view: "builder",
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unexpected error");
     } finally {
@@ -283,6 +298,12 @@ export default function Builder({ tableColumns }: BuilderProps) {
         const preset = await getPreset(id);
         setSeedValues(preset.params);
         setActivePresetParams(preset.params);
+        trackEvent("preset_loaded", {
+          preset_id: preset.id,
+          holes: preset.params.holes,
+          crosses: preset.params.crosses,
+          wheel_type: preset.params.wheelType,
+        });
         if (preset.params.holes !== holes) {
           navigate(`/builder/${preset.params.holes}`);
         }
@@ -310,6 +331,13 @@ export default function Builder({ tableColumns }: BuilderProps) {
       setSelectedPresetId(created.id);
       setActivePresetParams(created.params);
       toast({ title: "Preset saved", description: name });
+      trackEvent("preset_saved", {
+        preset_id: created.id,
+        holes: created.params.holes,
+        crosses: created.params.crosses,
+        wheel_type: created.params.wheelType,
+        source: "save_as",
+      });
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unexpected error";
       setPresetError(message);
@@ -337,6 +365,13 @@ export default function Builder({ tableColumns }: BuilderProps) {
         presets.find((preset) => preset.id === selectedPresetId)?.name ??
         "Preset";
       toast({ title: "Preset saved", description: presetName });
+      trackEvent("preset_saved", {
+        preset_id: selectedPresetId,
+        holes: currentParams.holes,
+        crosses: currentParams.crosses,
+        wheel_type: currentParams.wheelType,
+        source: "update",
+      });
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unexpected error";
       setPresetError(message);
@@ -365,6 +400,12 @@ export default function Builder({ tableColumns }: BuilderProps) {
       setActivePresetParams(null);
       await refreshPresets();
       toast({ title: "Preset deleted", description: presetName });
+      trackEvent("preset_deleted", {
+        preset_id: selectedPresetId,
+        holes: activePresetParams?.holes,
+        crosses: activePresetParams?.crosses,
+        wheel_type: activePresetParams?.wheelType,
+      });
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unexpected error";
       setPresetError(message);
@@ -382,6 +423,12 @@ export default function Builder({ tableColumns }: BuilderProps) {
     if (printMode) {
       setResultsTab("table");
       window.setTimeout(() => window.print(), 100);
+      trackEvent("pattern_print_view", {
+        holes: currentParams.holes,
+        crosses: currentParams.crosses,
+        wheel_type: currentParams.wheelType,
+        view: "builder",
+      });
     }
   }, [printMode]);
 
@@ -892,6 +939,12 @@ export default function Builder({ tableColumns }: BuilderProps) {
                         onHoverSpokeChange={setHoveredSpoke}
                         sideFilter={sideFilter}
                         columnVisibility={tableColumns}
+                        analyticsContext={{
+                          holes: currentParams.holes,
+                          crosses: currentParams.crosses,
+                          wheelType: currentParams.wheelType,
+                          symmetry: currentParams.symmetry,
+                        }}
                       />
                     </div>
                     <p className="text-xs text-slate-500 sm:hidden">
@@ -1137,6 +1190,12 @@ export default function Builder({ tableColumns }: BuilderProps) {
                           onHoverSpokeChange={setHoveredSpoke}
                           sideFilter={sideFilter}
                           columnVisibility={tableColumns}
+                          analyticsContext={{
+                            holes: currentParams.holes,
+                            crosses: currentParams.crosses,
+                            wheelType: currentParams.wheelType,
+                            symmetry: currentParams.symmetry,
+                          }}
                         />
                       </div>
                       <p className="text-xs text-slate-500 sm:hidden">

@@ -10,6 +10,7 @@ import { computePattern } from "../lib/api";
 import { defaultPatternRequest } from "../lib/defaults";
 import { isHoleOption } from "../lib/holeOptions";
 import { normalizeParamsForHoles } from "../lib/pattern";
+import { trackEvent } from "../lib/analytics";
 import type { PatternRequest, PatternResponse } from "../lib/types";
 
 const zoomLevels = [0.6, 0.8, 1, 1.2, 1.4, 1.6];
@@ -56,12 +57,20 @@ export default function Flow() {
       const response = await computePattern(params);
       setData(response);
       setLastUpdated(new Date());
+      trackEvent("pattern_generated", {
+        holes: params.holes,
+        crosses: params.crosses,
+        wheel_type: params.wheelType,
+        symmetry: params.symmetry,
+        invert_heads: params.invertHeads,
+        view: "flow",
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unexpected error");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currentParams]);
 
   useEffect(() => {
     if (!holesParam || hasValidHolesParam) {
@@ -125,7 +134,12 @@ export default function Flow() {
     printWindow.document.write(html);
     printWindow.document.close();
     printWindow.focus();
-  }, []);
+    trackEvent("flow_print_view", {
+      holes: currentParams.holes,
+      crosses: currentParams.crosses,
+      wheel_type: currentParams.wheelType,
+    });
+  }, [currentParams]);
 
   const handleDownloadSvg = useCallback(() => {
     const svg = svgRef.current?.outerHTML;
@@ -139,6 +153,11 @@ export default function Flow() {
     link.download = "wheel-lacing-flow.svg";
     link.click();
     URL.revokeObjectURL(url);
+    trackEvent("flow_download_svg", {
+      holes: currentParams.holes,
+      crosses: currentParams.crosses,
+      wheel_type: currentParams.wheelType,
+    });
   }, []);
 
   const paramSummary = useMemo(

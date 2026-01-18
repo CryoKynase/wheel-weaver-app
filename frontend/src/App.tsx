@@ -4,6 +4,7 @@ import {
   Navigate,
   Route,
   Routes,
+  useLocation,
   useMatch,
   useNavigate,
 } from "react-router-dom";
@@ -24,6 +25,8 @@ import {
   type AccentThemeId,
 } from "./lib/theme";
 import { Toaster } from "@/components/ui/toaster";
+import ConsentBanner from "./components/ConsentBanner";
+import { applyAnalyticsPreferences, trackPageView } from "./lib/analytics";
 
 const linkBase =
   "block rounded-md border border-transparent px-3 py-2 text-sm font-medium transition";
@@ -37,6 +40,7 @@ const navLinkClass = ({ isActive }: { isActive: boolean }) =>
 
 export default function App() {
   const navigate = useNavigate();
+  const location = useLocation();
   const builderMatch = useMatch("/builder/:holes");
   const flowMatch = useMatch("/flow/:holes");
   const [selectedHoles, setSelectedHoles] = useState(
@@ -71,6 +75,14 @@ export default function App() {
     root.style.setProperty("--ring", activeTheme.tokens.ring);
     root.style.setProperty("--accent", activeTheme.tokens.accent);
   }, [accentThemeId]);
+
+  useEffect(() => {
+    applyAnalyticsPreferences();
+  }, []);
+
+  useEffect(() => {
+    trackPageView(`${location.pathname}${location.search}`);
+  }, [location.pathname, location.search]);
 
   const builderPath = useMemo(
     () => `/builder/${selectedHoles}`,
@@ -190,6 +202,7 @@ export default function App() {
           </div>
         </main>
       </div>
+      <ConsentBanner />
       <Toaster />
     </div>
   );
