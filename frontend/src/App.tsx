@@ -29,6 +29,15 @@ import {
 import { Toaster } from "@/components/ui/toaster";
 import ConsentBanner from "./components/ConsentBanner";
 import { initializeAnalytics, trackPageView } from "./lib/analytics";
+import { Button } from "@/components/ui/Button";
+import {
+  Sheet,
+  SheetContent,
+  SheetTitle,
+  SheetTrigger,
+  SheetClose,
+} from "@/components/ui/sheet";
+import { Menu } from "lucide-react";
 
 const linkBase =
   "block rounded-md border border-transparent px-3 py-2 text-sm font-medium transition";
@@ -38,6 +47,15 @@ const navLinkClass = ({ isActive }: { isActive: boolean }) =>
     isActive
       ? "border-primary/30 bg-primary/10 text-foreground"
       : "text-muted-foreground hover:bg-accent/40 hover:text-foreground"
+  }`;
+
+const STORED_HOLES_KEY = "wheelweaver:selectedHoles";
+
+const drawerLinkClass = ({ isActive }: { isActive: boolean }) =>
+  `flex h-11 w-full items-center rounded-md border px-3 text-sm font-medium transition ${
+    isActive
+      ? "border-primary/40 bg-primary/10 text-foreground"
+      : "border-transparent text-muted-foreground hover:bg-accent/40 hover:text-foreground"
   }`;
 
 export default function App() {
@@ -59,10 +77,21 @@ export default function App() {
     const param = builderMatch?.params.holes ?? flowMatch?.params.holes ?? "";
     const parsed = Number(param);
     if (Number.isNaN(parsed) || !isHoleOption(parsed)) {
+      if (!param) {
+        const stored = window.localStorage.getItem(STORED_HOLES_KEY);
+        const storedParsed = Number(stored);
+        if (!Number.isNaN(storedParsed) && isHoleOption(storedParsed)) {
+          setSelectedHoles(storedParsed);
+        }
+      }
       return;
     }
     setSelectedHoles(parsed);
   }, [builderMatch?.params.holes, flowMatch?.params.holes]);
+
+  useEffect(() => {
+    window.localStorage.setItem(STORED_HOLES_KEY, String(selectedHoles));
+  }, [selectedHoles]);
 
   useEffect(() => {
     const activeTheme =
@@ -97,8 +126,8 @@ export default function App() {
     <div className="min-h-screen bg-[hsl(var(--accent))] text-slate-900">
       <div className="min-h-screen">
         <header className="safe-top sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
-          <div className="grid items-center gap-3 px-6 py-4 sm:grid-cols-[1fr_auto_1fr]">
-            <div className="flex flex-wrap items-center gap-4">
+          <div className="px-4 py-3 sm:px-6 sm:py-4">
+            <div className="flex items-center gap-3 sm:hidden">
               <Link
                 to={builderPath}
                 className="flex items-center gap-2"
@@ -107,51 +136,162 @@ export default function App() {
                 <img
                   src="/logo-28.png"
                   alt="WheelWeaver logo"
-                  className="h-7 w-7"
+                  className="h-6 w-6"
                 />
-                <div className="text-lg font-semibold tracking-[0.14em]">
-                  WHEELWEAVER
-                </div>
+                <div className="text-sm font-semibold tracking-[0.18em]">WW</div>
               </Link>
+              <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                <span className="sr-only">Rim Holes</span>
+                <select
+                  className="h-11 rounded-md border border-slate-300 bg-white px-2 text-sm"
+                  value={selectedHoles}
+                  onChange={(event) => {
+                    const next = Number(event.target.value);
+                    if (Number.isNaN(next) || !isHoleOption(next)) {
+                      return;
+                    }
+                    setSelectedHoles(next);
+                    navigate(isFlowActive ? `/flow/${next}` : `/builder/${next}`);
+                  }}
+                >
+                  {holeOptions.map((holes) => (
+                    <option key={holes} value={holes}>
+                      {holes}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-11 w-11"
+                    aria-label="Open menu"
+                  >
+                    <Menu className="h-5 w-5" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-[320px] sm:w-[360px]">
+                  <SheetTitle>Menu</SheetTitle>
+                  <div className="mt-6 space-y-3">
+                    <SheetClose asChild>
+                      <NavLink to={builderPath} className={drawerLinkClass}>
+                        Builder
+                      </NavLink>
+                    </SheetClose>
+                    <SheetClose asChild>
+                      <NavLink to={flowPath} className={drawerLinkClass}>
+                        Flowchart
+                      </NavLink>
+                    </SheetClose>
+                    <div className="h-px bg-border" />
+                    <SheetClose asChild>
+                      <NavLink to="/about" className={drawerLinkClass}>
+                        About
+                      </NavLink>
+                    </SheetClose>
+                    <SheetClose asChild>
+                      <NavLink to="/readme" className={drawerLinkClass}>
+                        Readme
+                      </NavLink>
+                    </SheetClose>
+                    <SheetClose asChild>
+                      <NavLink to="/settings" className={drawerLinkClass}>
+                        Settings
+                      </NavLink>
+                    </SheetClose>
+                    <SheetClose asChild>
+                      <NavLink to="/privacy" className={drawerLinkClass}>
+                        Privacy
+                      </NavLink>
+                    </SheetClose>
+                  </div>
+                </SheetContent>
+              </Sheet>
             </div>
-            <label className="flex items-center justify-self-center gap-2 text-sm font-medium text-slate-700">
-              Rim Holes
-              <select
-                className="rounded-md border border-slate-300 bg-white px-2 py-1 text-sm"
-                value={selectedHoles}
-                onChange={(event) => {
-                  const next = Number(event.target.value);
-                  if (Number.isNaN(next) || !isHoleOption(next)) {
-                    return;
-                  }
-                  setSelectedHoles(next);
-                  navigate(isFlowActive ? `/flow/${next}` : `/builder/${next}`);
-                }}
+            <div className="mt-2 grid grid-cols-2 gap-2 sm:hidden">
+              <NavLink
+                to={builderPath}
+                className={({ isActive }) =>
+                  `flex h-11 items-center justify-center rounded-md border text-sm font-semibold transition ${
+                    isActive
+                      ? "border-primary/40 bg-primary/10 text-foreground"
+                      : "border-transparent text-muted-foreground hover:bg-accent/40 hover:text-foreground"
+                  }`
+                }
               >
-                {holeOptions.map((holes) => (
-                  <option key={holes} value={holes}>
-                    {holes}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <nav className="flex flex-wrap items-center justify-self-end gap-2">
-              <NavLink to={builderPath} className={navLinkClass}>
                 Builder
               </NavLink>
-              <NavLink to={flowPath} className={navLinkClass}>
+              <NavLink
+                to={flowPath}
+                className={({ isActive }) =>
+                  `flex h-11 items-center justify-center rounded-md border text-sm font-semibold transition ${
+                    isActive
+                      ? "border-primary/40 bg-primary/10 text-foreground"
+                      : "border-transparent text-muted-foreground hover:bg-accent/40 hover:text-foreground"
+                  }`
+                }
+              >
                 Flowchart
               </NavLink>
-              <NavLink to="/about" className={navLinkClass}>
-                About
-              </NavLink>
-              <NavLink to="/readme" className={navLinkClass}>
-                Readme
-              </NavLink>
-              <NavLink to="/settings" className={navLinkClass}>
-                Settings
-              </NavLink>
-            </nav>
+            </div>
+            <div className="hidden items-center gap-3 sm:grid sm:grid-cols-[1fr_auto_1fr]">
+              <div className="flex flex-wrap items-center gap-4">
+                <Link
+                  to={builderPath}
+                  className="flex items-center gap-2"
+                  aria-label="WheelWeaver home"
+                >
+                  <img
+                    src="/logo-28.png"
+                    alt="WheelWeaver logo"
+                    className="h-7 w-7"
+                  />
+                  <div className="text-lg font-semibold tracking-[0.14em]">
+                    WHEELWEAVER
+                  </div>
+                </Link>
+              </div>
+              <label className="flex items-center justify-self-center gap-2 text-sm font-medium text-slate-700">
+                Rim Holes
+                <select
+                  className="rounded-md border border-slate-300 bg-white px-2 py-1 text-sm"
+                  value={selectedHoles}
+                  onChange={(event) => {
+                    const next = Number(event.target.value);
+                    if (Number.isNaN(next) || !isHoleOption(next)) {
+                      return;
+                    }
+                    setSelectedHoles(next);
+                    navigate(isFlowActive ? `/flow/${next}` : `/builder/${next}`);
+                  }}
+                >
+                  {holeOptions.map((holes) => (
+                    <option key={holes} value={holes}>
+                      {holes}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <nav className="flex flex-wrap items-center justify-self-end gap-2">
+                <NavLink to={builderPath} className={navLinkClass}>
+                  Builder
+                </NavLink>
+                <NavLink to={flowPath} className={navLinkClass}>
+                  Flowchart
+                </NavLink>
+                <NavLink to="/about" className={navLinkClass}>
+                  About
+                </NavLink>
+                <NavLink to="/readme" className={navLinkClass}>
+                  Readme
+                </NavLink>
+                <NavLink to="/settings" className={navLinkClass}>
+                  Settings
+                </NavLink>
+              </nav>
+            </div>
           </div>
         </header>
         <main className="p-6">
