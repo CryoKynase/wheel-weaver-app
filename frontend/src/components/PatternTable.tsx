@@ -118,6 +118,7 @@ export default function PatternTable({
   const [nextStepMode, setNextStepMode] = useState(false);
   const [activeStep, setActiveStep] = useState<string | null>(null);
   const [highlightMode, setHighlightMode] = useState<HighlightMode>("current");
+  const [selectedSpoke, setSelectedSpoke] = useState<string | null>(null);
   const [lookupSide, setLookupSide] = useState<PatternRow["side"]>("DS");
   const [lookupType, setLookupType] = useState<LookupType>("rim");
   const [lookupValue, setLookupValue] = useState("");
@@ -358,6 +359,42 @@ export default function PatternTable({
   };
 
   const stepIndex = activeStep ? availableSteps.indexOf(activeStep) : -1;
+  const nextActionRow = table.getRowModel().rows[0]?.original ?? null;
+
+  const handleRowSelect = (spoke: string) => {
+    setSelectedSpoke(spoke);
+    onHoverSpokeChange?.(spoke);
+  };
+
+  const handleRowLeave = () => {
+    onHoverSpokeChange?.(selectedSpoke);
+  };
+
+  const handleStepPrev = () => {
+    if (!availableSteps.length) {
+      return;
+    }
+    if (!nextStepMode || stepIndex < 0) {
+      setNextStepMode(true);
+      setActiveStep(availableSteps[0]);
+      return;
+    }
+    setActiveStep(availableSteps[Math.max(0, stepIndex - 1)]);
+  };
+
+  const handleStepNext = () => {
+    if (!availableSteps.length) {
+      return;
+    }
+    if (!nextStepMode || stepIndex < 0) {
+      setNextStepMode(true);
+      setActiveStep(availableSteps[0]);
+      return;
+    }
+    setActiveStep(
+      availableSteps[Math.min(availableSteps.length - 1, stepIndex + 1)]
+    );
+  };
 
   return (
     <section className="space-y-4">
@@ -529,12 +566,24 @@ export default function PatternTable({
               <tbody>
                 {table.getRowModel().rows.map((row) => {
                   const highlight = row.original.notes.includes("Reference");
+                  const isSelected = row.original.spoke === selectedSpoke;
                   return (
                     <tr
                       key={row.id}
-                      className={highlight ? "bg-amber-50" : ""}
+                      className={`${highlight ? "bg-amber-50" : ""} ${
+                        isSelected ? "border-l-4 border-l-primary/40 bg-primary/5" : ""
+                      }`}
                       onMouseEnter={() => onHoverSpokeChange?.(row.original.spoke)}
-                      onMouseLeave={() => onHoverSpokeChange?.(null)}
+                      onMouseLeave={handleRowLeave}
+                      onClick={() => handleRowSelect(row.original.spoke)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          handleRowSelect(row.original.spoke);
+                        }
+                      }}
                     >
                       {row.getVisibleCells().map((cell) => {
                         const sticky = stickyConfig[cell.column.id];
@@ -544,7 +593,13 @@ export default function PatternTable({
                             key={cell.id}
                             className={`border-b border-slate-100 px-3 py-2 ${
                               isNotes ? "whitespace-normal" : "whitespace-nowrap"
-                            } ${sticky ? "sticky z-10 bg-white" : ""}`}
+                            } ${
+                              sticky
+                                ? isSelected
+                                  ? "sticky z-10 bg-primary/5"
+                                  : "sticky z-10 bg-white"
+                                : ""
+                            }`}
                             style={
                               sticky
                                 ? { left: `${sticky.left}px`, minWidth: sticky.width }
@@ -569,6 +624,70 @@ export default function PatternTable({
           <div className="text-xs font-semibold uppercase text-slate-500">
             Compact lookup
           </div>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              onClick={handleStepPrev}
+              variant="outline"
+              size="sm"
+              className="h-11 px-4 text-xs"
+            >
+              Prev step
+            </Button>
+            <Button
+              type="button"
+              onClick={handleStepNext}
+              variant="outline"
+              size="sm"
+              className="h-11 px-4 text-xs"
+            >
+              Next step
+            </Button>
+            {activeStep && (
+              <span className="text-xs text-slate-500">Showing {activeStep}</span>
+            )}
+          </div>
+          {nextActionRow && (
+            <div className="mt-3 rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+              <div className="text-[10px] font-semibold uppercase text-slate-500">
+                Next spoke action
+              </div>
+              <div className="mt-2 grid gap-2 text-sm sm:grid-cols-2">
+                <div>
+                  <span className="text-[10px] uppercase text-slate-500">
+                    Spoke
+                  </span>
+                  <div className="font-medium text-slate-900">
+                    {nextActionRow.spoke}
+                  </div>
+                </div>
+                <div>
+                  <span className="text-[10px] uppercase text-slate-500">
+                    Hub hole
+                  </span>
+                  <div className="font-medium text-slate-900">
+                    {nextActionRow.hubHole}
+                  </div>
+                </div>
+                <div>
+                  <span className="text-[10px] uppercase text-slate-500">
+                    Rim hole
+                  </span>
+                  <div className="font-medium text-slate-900">
+                    {nextActionRow.rimHole}
+                  </div>
+                </div>
+                <div className="sm:col-span-2">
+                  <span className="text-[10px] uppercase text-slate-500">
+                    Notes
+                  </span>
+                  <div className="font-medium text-slate-900">
+                    {nextActionRow.notes || "—"}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
           <div className="mt-3 flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2">
               {(["DS", "NDS"] as const).map((side) => (
@@ -578,7 +697,7 @@ export default function PatternTable({
                   onClick={() => setLookupSide(side)}
                   variant="outline"
                   size="sm"
-                  className={`h-7 rounded-full px-3 text-xs font-medium ${
+                  className={`h-11 rounded-full px-3 text-xs font-medium ${
                     lookupSide === side
                       ? "border-primary/40 bg-primary/10 text-foreground"
                       : "text-muted-foreground hover:bg-accent/40 hover:text-foreground"
@@ -596,7 +715,7 @@ export default function PatternTable({
                   onClick={() => setLookupType(type)}
                   variant="outline"
                   size="sm"
-                  className={`h-7 rounded-full px-3 text-xs font-medium ${
+                  className={`h-11 rounded-full px-3 text-xs font-medium ${
                     lookupType === type
                       ? "border-primary/40 bg-primary/10 text-foreground"
                       : "text-muted-foreground hover:bg-accent/40 hover:text-foreground"
@@ -654,6 +773,20 @@ export default function PatternTable({
                     Multiple matches found. Showing the first.
                   </div>
                 )}
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                  <div className="text-xs font-semibold uppercase text-slate-500">
+                    Lookup result
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-11 px-3 text-xs"
+                    onClick={() => handleRowSelect(lookupRow.spoke)}
+                  >
+                    Highlight in diagram
+                  </Button>
+                </div>
                 <dl className="grid gap-2 sm:grid-cols-2">
                   {lookupFields.map((field) => (
                     <div

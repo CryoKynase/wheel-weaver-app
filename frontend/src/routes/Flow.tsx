@@ -184,17 +184,37 @@ export default function Flow() {
 
       <div className="space-y-6 lg:grid lg:grid-cols-[380px_1fr] lg:gap-6 lg:space-y-0">
         <aside className="space-y-4">
-          <Card>
-            <CardContent>
-              <ParamPanel
-                holes={holes}
-                onParamsChange={handleParamsChange}
-                initialValues={seedValues}
-                sideFilter={sideFilter}
-                onSideFilterChange={setSideFilter}
-              />
-            </CardContent>
-          </Card>
+          <div className="space-y-3 lg:hidden">
+            <Card>
+              <details className="group">
+                <summary className="cursor-pointer px-4 pb-3 pt-4 text-sm font-semibold text-slate-900">
+                  Parameters
+                </summary>
+                <div className="px-4 pb-4">
+                  <ParamPanel
+                    holes={holes}
+                    onParamsChange={handleParamsChange}
+                    initialValues={seedValues}
+                    sideFilter={sideFilter}
+                    onSideFilterChange={setSideFilter}
+                  />
+                </div>
+              </details>
+            </Card>
+          </div>
+          <div className="hidden space-y-4 lg:block lg:sticky lg:top-20">
+            <Card>
+              <CardContent className="pt-4">
+                <ParamPanel
+                  holes={holes}
+                  onParamsChange={handleParamsChange}
+                  initialValues={seedValues}
+                  sideFilter={sideFilter}
+                  onSideFilterChange={setSideFilter}
+                />
+              </CardContent>
+            </Card>
+          </div>
         </aside>
         <div className="space-y-4">
           <div className="flex flex-wrap items-center gap-2">

@@ -105,6 +105,10 @@ export default function ParamPanel({
     const set = new Set<number>([...preferred, ...all]);
     return Array.from(set).sort((a, b) => a - b);
   }, [holes, maxCross]);
+  const parseNumericInput = (value: string) => {
+    const numeric = Number(value);
+    return Number.isNaN(numeric) ? 0 : numeric;
+  };
 
   useEffect(() => {
     if (values == null) {
@@ -252,11 +256,15 @@ export default function ParamPanel({
                 </Tooltip>
               </span>
               <input
-                type="number"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 min={1}
                 max={holes}
                 className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                {...register("startRimHole", { valueAsNumber: true })}
+                {...register("startRimHole", {
+                  setValueAs: (value) => parseNumericInput(value),
+                })}
               />
               {rimHoleHint && (
                 <p className="mt-1 text-xs text-slate-500">{rimHoleHint}</p>
@@ -284,11 +292,15 @@ export default function ParamPanel({
                 </Tooltip>
               </span>
               <input
-                type="number"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 min={1}
                 max={h}
                 className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                {...register("startHubHoleDS", { valueAsNumber: true })}
+                {...register("startHubHoleDS", {
+                  setValueAs: (value) => parseNumericInput(value),
+                })}
               />
               <p className="mt-1 text-xs text-slate-500">
                 Counted from the DS flange, 1 to {h}.
@@ -316,11 +328,15 @@ export default function ParamPanel({
                 </Tooltip>
               </span>
               <input
-                type="number"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 min={1}
                 max={h}
                 className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                {...register("startHubHoleNDS", { valueAsNumber: true })}
+                {...register("startHubHoleNDS", {
+                  setValueAs: (value) => parseNumericInput(value),
+                })}
               />
               <p className="mt-1 text-xs text-slate-500">
                 Counted from the NDS flange, 1 to {h}.

@@ -575,6 +575,18 @@ export default function Builder({ tableColumns }: BuilderProps) {
           type="button"
           variant="outline"
           size="sm"
+          className="h-6 px-2 text-[11px]"
+          onClick={() => {
+            setDiagramZoom(1);
+            setDiagramPan({ x: 0, y: 0 });
+          }}
+        >
+          Reset view
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
           className={`h-6 px-2 text-[11px] ${
             diagramLocked
               ? "border-primary/40 bg-primary/10 text-foreground"
@@ -670,6 +682,9 @@ export default function Builder({ tableColumns }: BuilderProps) {
   const handleDiagramPanStart = (
     event: ReactPointerEvent<HTMLDivElement>
   ) => {
+    if (diagramLocked) {
+      return;
+    }
     if (diagramZoom <= 1) {
       return;
     }
@@ -680,7 +695,12 @@ export default function Builder({ tableColumns }: BuilderProps) {
     const handleMove = (moveEvent: PointerEvent) => {
       const dx = moveEvent.clientX - startX;
       const dy = moveEvent.clientY - startY;
-      setDiagramPan({ x: startPan.x + dx, y: startPan.y + dy });
+      const maxPan = Math.max(0, (diagramZoom - 1) * 180);
+      const clamp = (value: number) => Math.min(maxPan, Math.max(-maxPan, value));
+      setDiagramPan({
+        x: clamp(startPan.x + dx),
+        y: clamp(startPan.y + dy),
+      });
     };
     const handleUp = () => {
       window.removeEventListener("pointermove", handleMove);
@@ -1004,7 +1024,7 @@ export default function Builder({ tableColumns }: BuilderProps) {
                       <div className="space-y-3">
                         {diagramControls}
                         <p className="text-xs text-slate-600 lg:hidden">
-                          Hover a row in the table to highlight it here.
+                          Tap a row in the table to highlight it here.
                         </p>
                         <div className="grid max-w-full gap-4 lg:grid-cols-[minmax(0,1fr)_260px]">
                           <div
@@ -1014,6 +1034,9 @@ export default function Builder({ tableColumns }: BuilderProps) {
                                 : ""
                             }`}
                             onPointerDown={handleDiagramPanStart}
+                            style={{
+                              touchAction: diagramZoom > 1 ? "none" : "auto",
+                            }}
                           >
                             <div
                               className="h-full w-full"
@@ -1103,7 +1126,7 @@ export default function Builder({ tableColumns }: BuilderProps) {
                             Spoke: {hoveredSpoke ?? "—"}
                           </Badge>
                           <p className="text-xs text-slate-600 lg:hidden">
-                            Hover a row in the table to highlight it here.
+                            Tap a row in the table to highlight it here.
                           </p>
                           <div className="mt-2 grid max-w-full gap-4 lg:grid-cols-[minmax(0,1fr)_260px]">
                             <div
@@ -1113,6 +1136,9 @@ export default function Builder({ tableColumns }: BuilderProps) {
                                   : ""
                               }`}
                               onPointerDown={handleDiagramPanStart}
+                              style={{
+                                touchAction: diagramZoom > 1 ? "none" : "auto",
+                              }}
                             >
                               <div
                                 className="h-full w-full"

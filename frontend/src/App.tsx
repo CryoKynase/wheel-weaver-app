@@ -96,7 +96,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[hsl(var(--accent))] text-slate-900">
       <div className="min-h-screen">
-        <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
+        <header className="safe-top sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
           <div className="grid items-center gap-3 px-6 py-4 sm:grid-cols-[1fr_auto_1fr]">
             <div className="flex flex-wrap items-center gap-4">
               <Link
