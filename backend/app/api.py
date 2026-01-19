@@ -355,9 +355,9 @@ def readme() -> dict:
 
         ---
 
-        ## Flow page
+        ## Flowchart page
 
-        The Flow page generates a **flowchart-style SVG** for the same pattern.
+        The Flowchart page generates a **flowchart-style SVG** for the same pattern.
 
         - Uses the same **Parameters panel** and DS/NDS filter.
         - **Zoom in/out** buttons adjust the chart scale.
