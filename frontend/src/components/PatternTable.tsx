@@ -190,12 +190,12 @@ export default function PatternTable({
       if (sideFilter !== "All" && row.side !== sideFilter) {
         return false;
       }
-      if (stepFilter !== "All" && row.step !== stepFilter) {
+      if (!nextStepMode && stepFilter !== "All" && row.step !== stepFilter) {
         return false;
       }
       return true;
     });
-  }, [rows, sideFilter, stepFilter]);
+  }, [rows, sideFilter, stepFilter, nextStepMode]);
 
   const availableSteps = useMemo(() => {
     return orderedSteps.filter((step) =>
@@ -216,6 +216,15 @@ export default function PatternTable({
       setActiveStep(availableSteps[0]);
     }
   }, [availableSteps, activeStep, nextStepMode]);
+
+  useEffect(() => {
+    if (!nextStepMode) {
+      return;
+    }
+    if (activeStep && stepFilter !== activeStep) {
+      setStepFilter(activeStep);
+    }
+  }, [activeStep, nextStepMode, stepFilter]);
 
   const visibleRows = useMemo(() => {
     if (!nextStepMode || !activeStep) {
@@ -452,8 +461,11 @@ export default function PatternTable({
                       <div className="flex items-center gap-2">
                         <Button
                           type="button"
-                          onClick={() => setActiveStep(availableSteps[stepIndex - 1])}
-                          disabled={stepIndex <= 0}
+                          onClick={handleStepPrev}
+                          disabled={
+                            !availableSteps.length ||
+                            (stepIndex <= 0 && stepIndex !== -1)
+                          }
                           variant="outline"
                           size="sm"
                           className="h-7 text-xs"
@@ -462,11 +474,11 @@ export default function PatternTable({
                         </Button>
                         <Button
                           type="button"
-                          onClick={() =>
-                            setActiveStep(availableSteps[stepIndex + 1])
-                          }
+                          onClick={handleStepNext}
                           disabled={
-                            stepIndex < 0 || stepIndex >= availableSteps.length - 1
+                            !availableSteps.length ||
+                            (stepIndex >= availableSteps.length - 1 &&
+                              stepIndex !== -1)
                           }
                           variant="outline"
                           size="sm"
@@ -517,7 +529,16 @@ export default function PatternTable({
               {stepOptions.map((step) => (
                 <Button
                   key={step}
-                  onClick={() => setStepFilter(step)}
+                  onClick={() => {
+                    setStepFilter(step);
+                    if (nextStepMode) {
+                      if (step === "All") {
+                        setNextStepMode(false);
+                      } else {
+                        setActiveStep(step);
+                      }
+                    }
+                  }}
                   type="button"
                   variant="outline"
                   size="sm"
