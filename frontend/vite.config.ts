@@ -27,22 +27,30 @@ const prerenderRoutes = [
 ];
 
 const PrerenderRenderer = vitePrerender.PuppeteerRenderer;
+const isRailway = Boolean(
+  process.env.RAILWAY || process.env.RAILWAY_ENVIRONMENT
+);
+const enablePrerender = process.env.PRERENDER === "true" || !isRailway;
 
 export default defineConfig({
   plugins: [
     react(),
-    vitePrerender({
-      staticDir: path.join(__dirname, "dist"),
-      routes: prerenderRoutes,
-      renderer: new PrerenderRenderer({
-        injectProperty: "__PRERENDER_INJECTED",
-        inject: {
-          isPrerender: true,
-        },
-        renderAfterDocumentEvent: "prerender-ready",
-        skipThirdPartyRequests: true,
-      }),
-    }),
+    ...(enablePrerender
+      ? [
+          vitePrerender({
+            staticDir: path.join(__dirname, "dist"),
+            routes: prerenderRoutes,
+            renderer: new PrerenderRenderer({
+              injectProperty: "__PRERENDER_INJECTED",
+              inject: {
+                isPrerender: true,
+              },
+              renderAfterDocumentEvent: "prerender-ready",
+              skipThirdPartyRequests: true,
+            }),
+          }),
+        ]
+      : []),
   ],
   resolve: {
     alias: {
