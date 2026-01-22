@@ -1,4 +1,6 @@
 User-agent: *
 Allow: /
+Disallow: /settings
+Disallow: /privacy
 
 Sitemap: https://www.wheelweaver.com/sitemap.xml

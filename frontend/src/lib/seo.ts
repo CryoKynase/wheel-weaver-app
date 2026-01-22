@@ -7,12 +7,13 @@ export type SeoMetadata = {
 };
 
 export const SEO_SITE_URL = "https://www.wheelweaver.com";
+export const SEO_SITE_NAME = "Wheel Weaver";
+export const SEO_TWITTER_SITE = "";
 export const DEFAULT_OG_IMAGE = "/og-image.png";
 
-const HOME_TITLE =
-  "Wheel Weaver - Wheel Lacing Patterns & Spoke Sequence (Schraner Method)";
+const HOME_TITLE = "Wheel Weaver | Wheel Lacing Patterns (Schraner Method)";
 const HOME_DESCRIPTION =
-  "Generate spoke lacing patterns and step-by-step sequences using the Schraner method. Builder, flowchart, and printable tables for common hole counts.";
+  "Instant spoke-by-spoke lacing patterns for common rim hole counts. Printable tables, flowcharts, and clear odd/even guidance based on the Schraner method.";
 
 const BUILDER_TITLE = "Wheel Weaver - Spoke Lacing Builder (Schraner Method)";
 const BUILDER_DESCRIPTION =
@@ -154,5 +155,15 @@ export function getSoftwareApplicationJsonLd() {
       price: "0",
       priceCurrency: "GBP",
     },
+  };
+}
+
+export function getWebSiteJsonLd() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "Wheel Weaver",
+    url: SEO_SITE_URL,
+    description: HOME_DESCRIPTION,
   };
 }

@@ -141,10 +141,13 @@ export default function Builder({ tableColumns, fallbackHoles }: BuilderProps) {
     [location.pathname, holes]
   );
   const jsonLd = useMemo(() => {
-    if (location.pathname !== "/") {
-      return null;
+    const normalizedPath = location.pathname.startsWith("/")
+      ? location.pathname
+      : `/${location.pathname}`;
+    if (normalizedPath.startsWith("/builder")) {
+      return getSoftwareApplicationJsonLd();
     }
-    return getSoftwareApplicationJsonLd();
+    return null;
   }, [location.pathname]);
   const [data, setData] = useState<PatternResponse | null>(null);
   const [loading, setLoading] = useState(false);

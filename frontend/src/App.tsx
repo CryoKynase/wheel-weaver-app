@@ -10,6 +10,7 @@ import {
   useNavigate,
 } from "react-router-dom";
 import Builder from "./routes/Builder";
+import Landing from "./routes/Landing";
 import Flow from "./routes/Flow";
 import Readme from "./routes/Readme";
 import About from "./routes/About";
@@ -307,12 +308,7 @@ export default function App() {
             <Routes>
               <Route
                 path="/"
-                element={
-                  <Builder
-                    tableColumns={tableColumns}
-                    fallbackHoles={selectedHoles}
-                  />
-                }
+                element={<Landing />}
               />
               <Route
                 path="/builder"
