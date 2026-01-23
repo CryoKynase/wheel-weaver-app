@@ -23,6 +23,8 @@ const RIM_RADIUS = 160;
 const DS_FLANGE_RADIUS = 105;
 const NDS_FLANGE_RADIUS = 85;
 const HUB_OFFSET = 18;
+const ENGINEER_FLANGE_SCALE = 0.55;
+const ENGINEER_HUB_HOLE_SCALE = 0.7;
 const CURVE_CONTROL_RATIO = 0.8;
 const CURVE_RADIAL_RATIO = 0.12;
 const HUB_BODY_RATIO = 0.65;
@@ -101,8 +103,16 @@ export default function PatternDiagram({
   const occlusionId = useId();
   const h = holes / 2;
   const hubStep = 360 / h;
+  const dsFlangeRadius =
+    view === "engineer"
+      ? DS_FLANGE_RADIUS * ENGINEER_FLANGE_SCALE
+      : DS_FLANGE_RADIUS;
+  const ndsFlangeRadius =
+    view === "engineer"
+      ? NDS_FLANGE_RADIUS * ENGINEER_FLANGE_SCALE
+      : NDS_FLANGE_RADIUS;
   const hubBodyRadius =
-    Math.min(DS_FLANGE_RADIUS, NDS_FLANGE_RADIUS) * HUB_BODY_RATIO;
+    Math.min(dsFlangeRadius, ndsFlangeRadius) * HUB_BODY_RATIO;
 
   const dsRef = findReference(rows, "DS", "Reference at valve");
   const ndsRef = findReference(rows, "NDS", "NDS start reference");
@@ -134,7 +144,7 @@ export default function PatternDiagram({
     const rim = pointOnCircle(RIM_RADIUS, rimAngleDeg);
     const hubAngleOffset = row.side === "DS" ? baseAngleDS : baseAngleNDS;
     const sideOffset = row.side === "DS" ? HUB_OFFSET : -HUB_OFFSET;
-    const hubRadius = row.side === "DS" ? DS_FLANGE_RADIUS : NDS_FLANGE_RADIUS;
+    const hubRadius = row.side === "DS" ? dsFlangeRadius : ndsFlangeRadius;
     const hubAngleDeg =
       row.side === "DS"
         ? hubRawDegDS(row.hubHole, hubStep) + hubAngleOffset
@@ -242,9 +252,9 @@ export default function PatternDiagram({
           const frontSide = lookFrom;
           const rearSide = lookFrom === "DS" ? "NDS" : "DS";
           const rearFlangeRadius =
-            rearSide === "DS" ? DS_FLANGE_RADIUS : NDS_FLANGE_RADIUS;
+            rearSide === "DS" ? dsFlangeRadius : ndsFlangeRadius;
           const frontFlangeRadius =
-            frontSide === "DS" ? DS_FLANGE_RADIUS : NDS_FLANGE_RADIUS;
+            frontSide === "DS" ? dsFlangeRadius : ndsFlangeRadius;
           const rearMaskId = `${occlusionId}-rear`;
           const rearSpokes = engineerSpokes.filter(
             ({ row }) => row.side === rearSide
@@ -344,7 +354,7 @@ export default function PatternDiagram({
           <circle
             cx={HUB_OFFSET}
             cy={0}
-            r={DS_FLANGE_RADIUS}
+            r={dsFlangeRadius}
             fill="none"
             stroke="#64748b"
             strokeWidth={1.6}
@@ -352,7 +362,7 @@ export default function PatternDiagram({
           <circle
             cx={-HUB_OFFSET}
             cy={0}
-            r={NDS_FLANGE_RADIUS}
+            r={ndsFlangeRadius}
             fill="none"
             stroke="#94a3b8"
             strokeWidth={1.3}
@@ -360,7 +370,7 @@ export default function PatternDiagram({
           <circle cx={0} cy={0} r={6} fill="#0f172a" />
 
           <text
-            x={HUB_OFFSET + DS_FLANGE_RADIUS + 10}
+            x={HUB_OFFSET + dsFlangeRadius + 10}
             y={-8}
             fontSize={10}
             fill="#334155"
@@ -368,7 +378,7 @@ export default function PatternDiagram({
             DS
           </text>
           <text
-            x={-HUB_OFFSET - NDS_FLANGE_RADIUS - 18}
+            x={-HUB_OFFSET - ndsFlangeRadius - 18}
             y={-8}
             fontSize={10}
             fill="#334155"
@@ -396,16 +406,16 @@ export default function PatternDiagram({
           {view !== "engineer" && (
             <>
               <line
-                x1={HUB_OFFSET + DS_FLANGE_RADIUS + 70}
+                x1={HUB_OFFSET + dsFlangeRadius + 70}
                 y1={-8}
-                x2={HUB_OFFSET + DS_FLANGE_RADIUS}
+                x2={HUB_OFFSET + dsFlangeRadius}
                 y2={-8}
                 stroke="#94a3b8"
                 strokeWidth={1.2}
                 markerEnd="url(#diagram-arrow)"
               />
               <text
-                x={HUB_OFFSET + DS_FLANGE_RADIUS + 74}
+                x={HUB_OFFSET + dsFlangeRadius + 74}
                 y={-12}
                 textAnchor="start"
                 fontSize={10}
@@ -415,16 +425,16 @@ export default function PatternDiagram({
               </text>
 
               <line
-                x1={-HUB_OFFSET - NDS_FLANGE_RADIUS - 70}
+                x1={-HUB_OFFSET - ndsFlangeRadius - 70}
                 y1={-8}
-                x2={-HUB_OFFSET - NDS_FLANGE_RADIUS}
+                x2={-HUB_OFFSET - ndsFlangeRadius}
                 y2={-8}
                 stroke="#94a3b8"
                 strokeWidth={1.2}
                 markerEnd="url(#diagram-arrow)"
               />
               <text
-                x={-HUB_OFFSET - NDS_FLANGE_RADIUS - 74}
+                x={-HUB_OFFSET - ndsFlangeRadius - 74}
                 y={-12}
                 textAnchor="end"
                 fontSize={10}
@@ -485,11 +495,11 @@ export default function PatternDiagram({
       {Array.from({ length: h }, (_, idx) => {
         const hole = idx + 1;
         const dsPoint = pointOnCircle(
-          DS_FLANGE_RADIUS,
+          dsFlangeRadius,
           hubRawDegDS(hole, hubStep) + baseAngleDS
         );
         const ndsPoint = pointOnCircle(
-          NDS_FLANGE_RADIUS,
+          ndsFlangeRadius,
           hubRawDegNDS(hole, hubStep) + baseAngleNDS
         );
         const hoveredDS = hoveredSpoke
@@ -517,7 +527,9 @@ export default function PatternDiagram({
                   <circle
                     cx={dsPoint.x}
                     cy={dsPoint.y}
-                    r={hoveredDS ? 4.4 : 3.4}
+                    r={
+                      (hoveredDS ? 4.4 : 3.4) * ENGINEER_HUB_HOLE_SCALE
+                    }
                     fill={hoveredDS ? "#0f172a" : "#475569"}
                     opacity={lookFrom === "DS" ? 1 : 0.5}
                   >
@@ -528,7 +540,9 @@ export default function PatternDiagram({
                   <circle
                     cx={ndsPoint.x}
                     cy={ndsPoint.y}
-                    r={hoveredNDS ? 4.2 : 3.2}
+                    r={
+                      (hoveredNDS ? 4.2 : 3.2) * ENGINEER_HUB_HOLE_SCALE
+                    }
                     fill={hoveredNDS ? "#0f172a" : "#64748b"}
                     opacity={lookFrom === "NDS" ? 1 : 0.5}
                   >
@@ -582,7 +596,7 @@ export default function PatternDiagram({
         .filter((hole) => hole % 2 === 0)
         .map((hole) => {
           const point = pointOnCircle(
-            DS_FLANGE_RADIUS + 10,
+            dsFlangeRadius + 10,
             hubRawDegDS(hole, hubStep) + baseAngleDS
           );
           return (

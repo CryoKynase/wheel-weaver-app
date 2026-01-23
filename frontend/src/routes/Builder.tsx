@@ -516,12 +516,6 @@ export default function Builder({ tableColumns, fallbackHoles }: BuilderProps) {
     );
   }, [activeStep, data, supportsSteps]);
 
-  const diagramRows = useMemo(() => {
-    if (supportsSteps && activeStep !== "all" && stepMatchRows) {
-      return stepMatchRows;
-    }
-    return data?.rows ?? [];
-  }, [activeStep, data?.rows, stepMatchRows, supportsSteps]);
   const diagramVisibleRows = useMemo(() => {
     if (supportsSteps && activeStep !== "all" && stepMatchRows) {
       return stepMatchRows;
@@ -1404,7 +1398,7 @@ export default function Builder({ tableColumns, fallbackHoles }: BuilderProps) {
                               >
                               <PatternDiagram
                                   holes={diagramParams.holes}
-                                  rows={diagramRows}
+                                  rows={data.rows}
                                   visibleRows={diagramVisibleRows}
                                   startRimHole={diagramParams.startRimHole}
                                   valveReference={diagramParams.valveReference}
@@ -1543,7 +1537,7 @@ export default function Builder({ tableColumns, fallbackHoles }: BuilderProps) {
                                 >
                                   <PatternDiagram
                                     holes={diagramParams.holes}
-                                    rows={diagramRows}
+                                    rows={data.rows}
                                     visibleRows={diagramVisibleRows}
                                     startRimHole={diagramParams.startRimHole}
                                     valveReference={diagramParams.valveReference}

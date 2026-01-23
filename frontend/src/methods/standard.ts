@@ -62,18 +62,11 @@ function crossesLabel(crosses: number) {
   return `${crosses}x (over ${crosses - 1}, under 1)`;
 }
 
-function snapToParity(index: number, parity: 0 | 1, holes: number) {
-  let next = mod(index, holes);
-  if (next % 2 !== parity) {
-    next = mod(next + 1, holes);
-  }
-  return next;
-}
-
 function buildStandardPattern(holes: number, params: StandardParams) {
   if (!Number.isInteger(holes) || holes < 20 || holes % 2 !== 0) {
     throw new Error("holes must be even and >= 20");
   }
+
   const h = holes / 2;
   const hubRight = Array.from({ length: h }, (_, idx) => idx + 1);
   const hubLeft = Array.from({ length: h }, (_, idx) => idx + 1);
@@ -81,9 +74,10 @@ function buildStandardPattern(holes: number, params: StandardParams) {
   const splitEven = (values: number[]) => values.filter((_, idx) => idx % 2 === 0);
   const splitOdd = (values: number[]) => values.filter((_, idx) => idx % 2 === 1);
 
-  const sideMap = params.startSide === "right"
-    ? { start: "right", other: "left" }
-    : { start: "left", other: "right" };
+  const sideMap =
+    params.startSide === "right"
+      ? { start: "right" as const, other: "left" as const }
+      : { start: "left" as const, other: "right" as const };
 
   const groupHead: Record<number, "in" | "out"> = {
     1: params.laceOrder === "headsInFirst" ? "in" : "out",
@@ -104,35 +98,43 @@ function buildStandardPattern(holes: number, params: StandardParams) {
     left: { out: splitEven(hubLeft), in: splitOdd(hubLeft) },
   };
 
-  const groupOrder = params.laceOrder === "headsInFirst"
-    ? [3, 4, 1, 2]
-    : [1, 2, 3, 4];
+  const groupOrder =
+    params.laceOrder === "headsInFirst" ? [3, 4, 1, 2] : [1, 2, 3, 4];
 
-  const tangentialOffset = 2 * params.crosses + 1;
-  const rimOffset = params.valveRule === "alignKeySpokeRightOfValve" ? 1 : 0;
+  // IMPORTANT:
+  // Our baseIndex already steps by 2 and preserves rim-hole parity for each side.
+  // Therefore tangential offset must be EVEN (full-rim holes) to stay on the same side’s holes.
+  const tangentialOffset = 2 * params.crosses; // 3x -> 6
+
+  // Valve shift must also preserve parity; shift by 2 (i.e., one "slot" on that side).
+  const rimOffset = params.valveRule === "alignKeySpokeRightOfValve" ? 2 : 0;
+
   const spokes: SpokePlacement[] = [];
   let spokeIndex = 1;
-  const sideCounters: Record<"right" | "left", number> = {
-    right: 0,
-    left: 0,
-  };
 
   for (const group of groupOrder) {
     const side = groupSide[group];
     const head = groupHead[group];
     const hubSequence = hubLists[side][head];
+
+    // right side uses odd holes, left uses even (in 0-based rim index terms)
     const parity: 0 | 1 = side === "right" ? 1 : 0;
 
     for (const hubHole of hubSequence) {
-      const indexWithinSide = sideCounters[side];
-      const isTrailing = indexWithinSide % 2 === 0;
+      // Simplified but stable convention:
+      // heads-out spokes act "trailing", heads-in act "leading".
+      const isTrailing = head === "out";
       const dir = isTrailing ? 1 : -1;
+
+      // Mirror the left side so the wheel doesn't “twist” the same way on both sides
       const sideFlip = side === "left" ? -1 : 1;
+
       const signed = dir * sideFlip * tangentialOffset;
 
-      // TODO: refine valve alignment rules once hub/rim modeling is finalized.
+      // Base position maps flange hole -> every-other rim hole on that side
       const baseIndex = (hubHole - 1) * 2 + parity + rimOffset;
-      const rimIndex = snapToParity(baseIndex + signed, parity, holes);
+
+      const rimIndex = mod(baseIndex + signed, holes);
 
       spokes.push({
         spokeIndex,
@@ -140,17 +142,18 @@ function buildStandardPattern(holes: number, params: StandardParams) {
         head,
         group: group as 1 | 2 | 3 | 4,
         hubHole,
-        rimHole: rimIndex + 1,
+        rimHole: rimIndex + 1, // 1-based for UI
         crosses: params.crosses,
         leadingTrailing: isTrailing ? "trailing" : "leading",
       });
+
       spokeIndex += 1;
-      sideCounters[side] += 1;
     }
   }
 
   return spokes;
 }
+
 
 export const standardMethod: LacingMethod = {
   id: "standard",
