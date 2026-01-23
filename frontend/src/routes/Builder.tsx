@@ -6,6 +6,7 @@ import { Helmet } from "react-helmet-async";
 import ParamPanel from "../components/ParamPanel";
 import PatternDiagram from "../components/PatternDiagram";
 import PatternTable from "../components/PatternTable";
+import StepToggle from "../components/StepToggle";
 import ComputeStatus from "../components/ComputeStatus";
 import Seo from "../components/Seo";
 import {
@@ -287,6 +288,17 @@ export default function Builder({ tableColumns, fallbackHoles }: BuilderProps) {
   const hasData = Boolean(data);
   const methodNotReady = methodId === "standard" && !hasData;
   const methodOptions = useMemo(() => Object.values(METHODS), []);
+  const stepOptions = useMemo(
+    () => method.steps ?? [],
+    [method.steps]
+  );
+  const stepBadgeText =
+    activeStep === "all"
+      ? "All spokes"
+      : `Step ${activeStep.replace("step", "")} (Group ${activeStep.replace(
+          "step",
+          ""
+        )})`;
 
   const handleCopyCsv = useCallback(
     async (rows: PatternRow[]) => {
@@ -504,9 +516,18 @@ export default function Builder({ tableColumns, fallbackHoles }: BuilderProps) {
     );
   }, [activeStep, data, supportsSteps]);
 
+  const diagramRows = useMemo(() => {
+    if (supportsSteps && activeStep !== "all" && stepMatchRows) {
+      return stepMatchRows;
+    }
+    return data?.rows ?? [];
+  }, [activeStep, data?.rows, stepMatchRows, supportsSteps]);
   const diagramVisibleRows = useMemo(() => {
-    return stepMatchRows ?? highlightRows;
-  }, [highlightRows, stepMatchRows]);
+    if (supportsSteps && activeStep !== "all" && stepMatchRows) {
+      return stepMatchRows;
+    }
+    return highlightRows;
+  }, [activeStep, highlightRows, stepMatchRows, supportsSteps]);
 
   const handleSelectPreset = useCallback(
     async (id: string | null) => {
@@ -973,6 +994,16 @@ export default function Builder({ tableColumns, fallbackHoles }: BuilderProps) {
         firstField?.focus();
         return;
       }
+      if (methodId === "standard") {
+        if (event.key === "0" || event.key === "Escape") {
+          setActiveStep("all");
+          return;
+        }
+        if (event.key >= "1" && event.key <= "4") {
+          setActiveStep(`step${event.key}` as StepId);
+          return;
+        }
+      }
       if (event.key === "t") {
         setResultsTab("table");
         return;
@@ -992,7 +1023,7 @@ export default function Builder({ tableColumns, fallbackHoles }: BuilderProps) {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
+  }, [methodId]);
 
   return (
     <>
@@ -1037,35 +1068,6 @@ export default function Builder({ tableColumns, fallbackHoles }: BuilderProps) {
           </DropdownMenu>
         </div>
       </div>
-
-      {supportsSteps && (
-        <div className="flex flex-wrap items-center gap-3 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs">
-          <span className="text-[11px] font-semibold uppercase text-slate-500">
-            Step filter
-          </span>
-          <div className="inline-flex rounded-md border border-border bg-background p-1">
-            {(method.steps ?? []).map((step) => {
-              const active = step.id === activeStep;
-              return (
-                <Button
-                  key={step.id}
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setActiveStep(step.id)}
-                  className={`rounded px-3 py-1.5 text-[11px] font-semibold transition ${
-                    active
-                      ? "bg-primary/10 text-foreground"
-                      : "text-muted-foreground hover:bg-accent/40 hover:text-foreground"
-                  }`}
-                >
-                  {step.label}
-                </Button>
-              );
-            })}
-          </div>
-        </div>
-      )}
 
       <div className="!mt-3 space-y-6 lg:grid lg:grid-cols-[380px_1fr] lg:gap-6 lg:space-y-0">
         {!printMode && (
@@ -1233,6 +1235,17 @@ export default function Builder({ tableColumns, fallbackHoles }: BuilderProps) {
                     className="border-l-4 border-l-primary/40 transition-all duration-200 ease-out"
                   >
                     <CardHeader className="flex flex-wrap items-center gap-2 border-b border-border bg-muted/40 py-1.5">
+                      <div className="text-xs font-semibold text-muted-foreground">
+                        Table
+                      </div>
+                      {supportsSteps && (
+                        <StepToggle
+                          steps={stepOptions}
+                          activeStep={activeStep}
+                          onChange={setActiveStep}
+                          compact
+                        />
+                      )}
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button
@@ -1276,13 +1289,13 @@ export default function Builder({ tableColumns, fallbackHoles }: BuilderProps) {
                           onHighlightRowsChange={setHighlightRows}
                           onHoverSpokeChange={setHoveredSpoke}
                           sideFilter={sideFilter}
-                        columnVisibility={tableColumns}
-                        emphasisRows={stepMatchRows ?? undefined}
-                        showStepControls={!supportsSteps}
-                        analyticsContext={{
-                          holes: schranerParamsSafe.holes,
-                          crosses: schranerParamsSafe.crosses,
-                          wheelType: schranerParamsSafe.wheelType,
+                          columnVisibility={tableColumns}
+                          activeStepFilter={activeStep}
+                          showStepControls={!supportsSteps}
+                          analyticsContext={{
+                            holes: schranerParamsSafe.holes,
+                            crosses: schranerParamsSafe.crosses,
+                            wheelType: schranerParamsSafe.wheelType,
                             symmetry: schranerParamsSafe.symmetry,
                           }}
                         />
@@ -1313,7 +1326,26 @@ export default function Builder({ tableColumns, fallbackHoles }: BuilderProps) {
                   (hasData ? (
                     <Card className={diagramCardClass}>
                       <CardHeader className="flex flex-wrap items-center gap-2 border-b border-border bg-muted/40 py-1.5">
-                        <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase text-slate-500">
+                        <div className="text-xs font-semibold text-muted-foreground">
+                          Diagram
+                        </div>
+                        {supportsSteps && (
+                          <StepToggle
+                            steps={stepOptions}
+                            activeStep={activeStep}
+                            onChange={setActiveStep}
+                            compact
+                          />
+                        )}
+                        {supportsSteps && (
+                          <Badge
+                            variant="outline"
+                            className="border-primary/20 bg-primary/10 text-foreground"
+                          >
+                            {stepBadgeText}
+                          </Badge>
+                        )}
+                        <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase text-muted-foreground">
                           {sideFilter !== "All" && (
                             <Badge variant="neutral">Filter: {sideFilter}</Badge>
                           )}
@@ -1341,7 +1373,13 @@ export default function Builder({ tableColumns, fallbackHoles }: BuilderProps) {
                       </CardHeader>
                       <CardContent className="pt-1.5">
                         <div className="space-y-3">
-                          {diagramControls}
+                        {diagramControls}
+                        {supportsSteps && (
+                          <p className="text-xs text-muted-foreground">
+                            Each step is one spoke group: a side + heads-in/out. Use All
+                            to see the full wheel.
+                          </p>
+                        )}
                           <p className="text-xs text-slate-600 lg:hidden">
                             Tap a row in the table to highlight it here.
                           </p>
@@ -1364,9 +1402,9 @@ export default function Builder({ tableColumns, fallbackHoles }: BuilderProps) {
                                   transformOrigin: "center",
                                 }}
                               >
-                                <PatternDiagram
+                              <PatternDiagram
                                   holes={diagramParams.holes}
-                                  rows={data.rows}
+                                  rows={diagramRows}
                                   visibleRows={diagramVisibleRows}
                                   startRimHole={diagramParams.startRimHole}
                                   valveReference={diagramParams.valveReference}
@@ -1420,33 +1458,58 @@ export default function Builder({ tableColumns, fallbackHoles }: BuilderProps) {
                   {!printMode &&
                     (hasData ? (
                       <Card className={diagramCardClass}>
-                        <CardHeader className="flex flex-wrap items-center gap-2 border-b border-border bg-muted/40 py-1.5">
-                        <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase text-slate-500">
-                          {sideFilter !== "All" && (
-                            <Badge variant="neutral">Filter: {sideFilter}</Badge>
-                          )}
-                        </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                            size="sm"
-                            className="h-6 px-2 text-[11px] text-primary underline-offset-4 hover:bg-primary/10 hover:text-primary hover:underline sm:ml-auto"
-                            aria-label="Jump to the pattern table"
-                            onClick={() =>
-                              document
-                                .getElementById("pattern-table-both")
-                                ?.scrollIntoView({
-                                  behavior: "smooth",
-                                  block: "start",
-                                })
-                            }
-                          >
-                            Jump to table
-                          </Button>
-                        </CardHeader>
+                      <CardHeader className="flex flex-wrap items-center gap-2 border-b border-border bg-muted/40 py-1.5">
+                      <div className="text-xs font-semibold text-muted-foreground">
+                        Diagram
+                      </div>
+                      {supportsSteps && (
+                        <StepToggle
+                          steps={stepOptions}
+                          activeStep={activeStep}
+                          onChange={setActiveStep}
+                          compact
+                        />
+                      )}
+                      {supportsSteps && (
+                        <Badge
+                          variant="outline"
+                          className="border-primary/20 bg-primary/10 text-foreground"
+                        >
+                          {stepBadgeText}
+                        </Badge>
+                      )}
+                      <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase text-muted-foreground">
+                        {sideFilter !== "All" && (
+                          <Badge variant="neutral">Filter: {sideFilter}</Badge>
+                        )}
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                          size="sm"
+                          className="h-6 px-2 text-[11px] text-primary underline-offset-4 hover:bg-primary/10 hover:text-primary hover:underline sm:ml-auto"
+                          aria-label="Jump to the pattern table"
+                          onClick={() =>
+                            document
+                              .getElementById("pattern-table-both")
+                              ?.scrollIntoView({
+                                behavior: "smooth",
+                                block: "start",
+                              })
+                          }
+                        >
+                          Jump to table
+                        </Button>
+                      </CardHeader>
                         <CardContent className="pt-1.5">
                           <div className="space-y-3">
-                            {diagramControls}
+                          {diagramControls}
+                          {supportsSteps && (
+                            <p className="text-xs text-muted-foreground">
+                              Each step is one spoke group: a side + heads-in/out. Use All
+                              to see the full wheel.
+                            </p>
+                          )}
                           <div className="relative">
                             <Badge
                               variant="neutral"
@@ -1480,7 +1543,7 @@ export default function Builder({ tableColumns, fallbackHoles }: BuilderProps) {
                                 >
                                   <PatternDiagram
                                     holes={diagramParams.holes}
-                                    rows={data.rows}
+                                    rows={diagramRows}
                                     visibleRows={diagramVisibleRows}
                                     startRimHole={diagramParams.startRimHole}
                                     valveReference={diagramParams.valveReference}
@@ -1529,6 +1592,17 @@ export default function Builder({ tableColumns, fallbackHoles }: BuilderProps) {
                       className="border-l-4 border-l-primary/40 transition-all duration-200 ease-out"
                     >
                       <CardHeader className="flex flex-wrap items-center gap-2 border-b border-border bg-muted/40 py-1.5">
+                        <div className="text-xs font-semibold text-muted-foreground">
+                          Table
+                        </div>
+                        {supportsSteps && (
+                          <StepToggle
+                            steps={stepOptions}
+                            activeStep={activeStep}
+                            onChange={setActiveStep}
+                            compact
+                          />
+                        )}
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button
@@ -1571,14 +1645,14 @@ export default function Builder({ tableColumns, fallbackHoles }: BuilderProps) {
                             onVisibleRowsChange={setVisibleRows}
                             onHighlightRowsChange={setHighlightRows}
                             onHoverSpokeChange={setHoveredSpoke}
-                          sideFilter={sideFilter}
-                          columnVisibility={tableColumns}
-                          emphasisRows={stepMatchRows ?? undefined}
-                          showStepControls={!supportsSteps}
-                          analyticsContext={{
-                            holes: schranerParamsSafe.holes,
-                            crosses: schranerParamsSafe.crosses,
-                            wheelType: schranerParamsSafe.wheelType,
+                            sideFilter={sideFilter}
+                            columnVisibility={tableColumns}
+                            activeStepFilter={activeStep}
+                            showStepControls={!supportsSteps}
+                            analyticsContext={{
+                              holes: schranerParamsSafe.holes,
+                              crosses: schranerParamsSafe.crosses,
+                              wheelType: schranerParamsSafe.wheelType,
                               symmetry: schranerParamsSafe.symmetry,
                             }}
                           />

@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/Button";
 
 import { trackEvent } from "../lib/analytics";
 import type { PatternRow } from "../lib/types";
+import { isInActiveStep } from "../methods/registry";
+import type { StepId } from "../methods/types";
 import type { TableColumnVisibility } from "../lib/tableSettings";
 
 const baseColumns: ColumnDef<PatternRow>[] = [
@@ -35,7 +37,7 @@ type PatternTableProps = {
   onHoverSpokeChange?: (spoke: string | null) => void;
   sideFilter: "All" | "DS" | "NDS";
   columnVisibility: TableColumnVisibility;
-  emphasisRows?: PatternRow[];
+  activeStepFilter?: StepId;
   showStepControls?: boolean;
   analyticsContext?: {
     holes?: number;
@@ -111,7 +113,7 @@ export default function PatternTable({
   onHoverSpokeChange,
   sideFilter,
   columnVisibility,
-  emphasisRows,
+  activeStepFilter = "all",
   showStepControls = true,
   analyticsContext,
 }: PatternTableProps) {
@@ -124,7 +126,7 @@ export default function PatternTable({
   const [manualDisplayMode, setManualDisplayMode] = useState(false);
   const [stepFilter, setStepFilter] = useState("All");
   const [nextStepMode, setNextStepMode] = useState(false);
-  const [activeStep, setActiveStep] = useState<string | null>(null);
+  const [tableActiveStep, setTableActiveStep] = useState<string | null>(null);
   const [highlightMode, setHighlightMode] = useState<HighlightMode>("current");
   const [selectedSpoke, setSelectedSpoke] = useState<string | null>(null);
   const [lookupSide, setLookupSide] = useState<PatternRow["side"]>("DS");
@@ -139,12 +141,7 @@ export default function PatternTable({
     [columnVisibility]
   );
   const allowStepControls = showStepControls;
-  const emphasisSet = useMemo(() => {
-    if (!emphasisRows || emphasisRows.length === 0) {
-      return null;
-    }
-    return new Set(emphasisRows.map((row) => row.order));
-  }, [emphasisRows]);
+  const isStepFilterActive = activeStepFilter !== "all";
 
   const stickyConfig = useMemo(() => {
     let left = 0;
@@ -183,7 +180,7 @@ export default function PatternTable({
     }
     setNextStepMode(false);
     setStepFilter("All");
-    setActiveStep(null);
+    setTableActiveStep(null);
   }, [allowStepControls]);
 
   useEffect(() => {
@@ -229,33 +226,33 @@ export default function PatternTable({
 
   useEffect(() => {
     if (!nextStepMode) {
-      setActiveStep(null);
+      setTableActiveStep(null);
       return;
     }
     if (!availableSteps.length) {
-      setActiveStep(null);
+      setTableActiveStep(null);
       return;
     }
-    if (!activeStep || !availableSteps.includes(activeStep)) {
-      setActiveStep(availableSteps[0]);
+    if (!tableActiveStep || !availableSteps.includes(tableActiveStep)) {
+      setTableActiveStep(availableSteps[0]);
     }
-  }, [availableSteps, activeStep, nextStepMode]);
+  }, [availableSteps, nextStepMode, tableActiveStep]);
 
   useEffect(() => {
     if (!nextStepMode) {
       return;
     }
-    if (activeStep && stepFilter !== activeStep) {
-      setStepFilter(activeStep);
+    if (tableActiveStep && stepFilter !== tableActiveStep) {
+      setStepFilter(tableActiveStep);
     }
-  }, [activeStep, nextStepMode, stepFilter]);
+  }, [nextStepMode, stepFilter, tableActiveStep]);
 
   const visibleRows = useMemo(() => {
-    if (!allowStepControls || !nextStepMode || !activeStep) {
+    if (!allowStepControls || !nextStepMode || !tableActiveStep) {
       return filteredRows;
     }
-    return filteredRows.filter((row) => row.step === activeStep);
-  }, [activeStep, allowStepControls, filteredRows, nextStepMode]);
+    return filteredRows.filter((row) => row.step === tableActiveStep);
+  }, [allowStepControls, filteredRows, nextStepMode, tableActiveStep]);
 
   const highlightRows = useMemo(() => {
     if (!allowStepControls) {
@@ -264,7 +261,7 @@ export default function PatternTable({
     if (highlightMode === "visible") {
       return visibleRows;
     }
-    if (nextStepMode && activeStep) {
+    if (nextStepMode && tableActiveStep) {
       return visibleRows;
     }
     if (stepFilter !== "All") {
@@ -272,7 +269,6 @@ export default function PatternTable({
     }
     return filteredRows.filter((row) => row.step === "R1");
   }, [
-    activeStep,
     filteredRows,
     highlightMode,
     nextStepMode,
@@ -394,7 +390,7 @@ export default function PatternTable({
     });
   };
 
-  const stepIndex = activeStep ? availableSteps.indexOf(activeStep) : -1;
+  const stepIndex = tableActiveStep ? availableSteps.indexOf(tableActiveStep) : -1;
   const nextActionRow = table.getRowModel().rows[0]?.original ?? null;
 
   const handleRowSelect = (spoke: string) => {
@@ -412,10 +408,10 @@ export default function PatternTable({
     }
     if (!nextStepMode || stepIndex < 0) {
       setNextStepMode(true);
-      setActiveStep(availableSteps[0]);
+      setTableActiveStep(availableSteps[0]);
       return;
     }
-    setActiveStep(availableSteps[Math.max(0, stepIndex - 1)]);
+    setTableActiveStep(availableSteps[Math.max(0, stepIndex - 1)]);
   };
 
   const handleStepNext = () => {
@@ -424,10 +420,10 @@ export default function PatternTable({
     }
     if (!nextStepMode || stepIndex < 0) {
       setNextStepMode(true);
-      setActiveStep(availableSteps[0]);
+      setTableActiveStep(availableSteps[0]);
       return;
     }
-    setActiveStep(
+    setTableActiveStep(
       availableSteps[Math.min(availableSteps.length - 1, stepIndex + 1)]
     );
   };
@@ -515,9 +511,9 @@ export default function PatternTable({
                             >
                               Next step
                             </Button>
-                            {activeStep && (
+                            {tableActiveStep && (
                               <span className="text-xs text-slate-500">
-                                Showing {activeStep}
+                                Showing {tableActiveStep}
                               </span>
                             )}
                           </div>
@@ -563,13 +559,13 @@ export default function PatternTable({
                     key={step}
                     onClick={() => {
                       setStepFilter(step);
-                      if (nextStepMode) {
-                        if (step === "All") {
-                          setNextStepMode(false);
-                        } else {
-                          setActiveStep(step);
-                        }
+                    if (nextStepMode) {
+                      if (step === "All") {
+                        setNextStepMode(false);
+                      } else {
+                        setTableActiveStep(step);
                       }
+                    }
                     }}
                     type="button"
                     variant="outline"
@@ -621,15 +617,18 @@ export default function PatternTable({
                 {table.getRowModel().rows.map((row) => {
                   const highlight = row.original.notes.includes("Reference");
                   const isSelected = row.original.spoke === selectedSpoke;
-                  const isEmphasisMatch =
-                    emphasisSet == null || emphasisSet.has(row.original.order);
+                  const groupValue = row.original.group;
+                  const matchesStep =
+                    typeof groupValue === "number"
+                      ? isInActiveStep(groupValue, activeStepFilter)
+                      : true;
                   const dimRow =
-                    emphasisSet != null && !isEmphasisMatch && !isSelected
-                      ? "opacity-40"
+                    isStepFilterActive && !matchesStep && !isSelected
+                      ? "opacity-50 text-muted-foreground"
                       : "";
                   const emphasizeRow =
-                    emphasisSet != null && isEmphasisMatch && !highlight && !isSelected
-                      ? "bg-primary/5"
+                    isStepFilterActive && matchesStep && !highlight && !isSelected
+                      ? "bg-primary/5 border-l-2 border-primary/40"
                       : "";
                   return (
                     <tr
@@ -652,27 +651,61 @@ export default function PatternTable({
                       {row.getVisibleCells().map((cell) => {
                         const sticky = stickyConfig[cell.column.id];
                         const isNotes = cell.column.id === "notes";
-                        return (
-                          <td
-                            key={cell.id}
-                            className={`border-b border-slate-100 px-3 py-2 ${
-                              isNotes ? "whitespace-normal" : "whitespace-nowrap"
-                            } ${
-                              sticky
-                                ? isSelected
-                                  ? "sticky z-10 bg-primary/5"
-                                  : "sticky z-10 bg-white"
-                                : ""
-                            }`}
-                            style={
-                              sticky
-                                ? { left: `${sticky.left}px`, minWidth: sticky.width }
-                                : undefined
-                            }
-                          >
-                            {String(cell.getValue() ?? "")}
-                          </td>
-                        );
+                          const rawValue = cell.getValue();
+                          if (cell.column.id === "group" && rawValue != null) {
+                            const activePill = !isStepFilterActive || matchesStep;
+                            return (
+                              <td
+                                key={cell.id}
+                                className={`border-b border-slate-100 px-3 py-2 ${
+                                  sticky
+                                    ? isSelected
+                                      ? "sticky z-10 bg-primary/5"
+                                      : "sticky z-10 bg-white"
+                                    : ""
+                                }`}
+                                style={
+                                  sticky
+                                    ? {
+                                        left: `${sticky.left}px`,
+                                        minWidth: sticky.width,
+                                      }
+                                    : undefined
+                                }
+                              >
+                                <span
+                                  className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs ${
+                                    activePill
+                                      ? "border-primary/20 bg-primary/10 text-foreground"
+                                      : "border-border bg-muted/40 text-muted-foreground"
+                                  }`}
+                                >
+                                  G{rawValue}
+                                </span>
+                              </td>
+                            );
+                          }
+                          return (
+                            <td
+                              key={cell.id}
+                              className={`border-b border-slate-100 px-3 py-2 ${
+                                isNotes ? "whitespace-normal" : "whitespace-nowrap"
+                              } ${
+                                sticky
+                                  ? isSelected
+                                    ? "sticky z-10 bg-primary/5"
+                                    : "sticky z-10 bg-white"
+                                  : ""
+                              }`}
+                              style={
+                                sticky
+                                  ? { left: `${sticky.left}px`, minWidth: sticky.width }
+                                  : undefined
+                              }
+                            >
+                              {String(rawValue ?? "")}
+                            </td>
+                          );
                       })}
                     </tr>
                   );
@@ -709,9 +742,11 @@ export default function PatternTable({
                 >
                   Next step
                 </Button>
-                {activeStep && (
-                  <span className="text-xs text-slate-500">Showing {activeStep}</span>
-                )}
+            {tableActiveStep && (
+              <span className="text-xs text-slate-500">
+                Showing {tableActiveStep}
+              </span>
+            )}
               </div>
               {nextActionRow && (
                 <div className="mt-3 rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
