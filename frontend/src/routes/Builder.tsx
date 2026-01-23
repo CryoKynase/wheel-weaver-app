@@ -47,9 +47,13 @@ import type { TableColumnVisibility } from "../lib/tableSettings";
 import { evaluateValveClearance } from "../lib/valveClearance";
 import { trackEvent } from "../lib/analytics";
 import {
+  METHODS,
+  getMethod,
+  groupsForStep,
   normalizeHolesForMethod,
   normalizeMethodId,
 } from "../methods/registry";
+import type { MethodId, StepId } from "../methods/types";
 import type {
   PatternRequest,
   PatternResponse,
@@ -136,6 +140,7 @@ export default function Builder({ tableColumns, fallbackHoles }: BuilderProps) {
   const { holes: holesParam, method: methodParam } = useParams();
   const parsedHoles = Number(holesParam);
   const methodId = normalizeMethodId(methodParam);
+  const method = getMethod(methodId);
   const normalizedHoles = normalizeHolesForMethod(methodId, parsedHoles);
   const hasValidMethodParam = methodParam === methodId;
   const hasValidHolesParam =
@@ -160,6 +165,7 @@ export default function Builder({ tableColumns, fallbackHoles }: BuilderProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [activeStep, setActiveStep] = useState<StepId>("all");
   const [presetError, setPresetError] = useState<string | null>(null);
   const [presets, setPresets] = useState<PresetSummary[]>([]);
   const [presetBusy, setPresetBusy] = useState(false);
@@ -209,6 +215,10 @@ export default function Builder({ tableColumns, fallbackHoles }: BuilderProps) {
   const [hoveredSpoke, setHoveredSpoke] = useState<string | null>(null);
   const [sideFilter, setSideFilter] = useState<"All" | "DS" | "NDS">("All");
   const tableRows = visibleRows.length ? visibleRows : data?.rows ?? [];
+  const supportsSteps = Boolean(method.supportsSteps);
+  const hasData = Boolean(data);
+  const methodNotReady = methodId !== "schraner";
+  const methodOptions = useMemo(() => Object.values(METHODS), []);
 
   const handleCopyCsv = useCallback(
     async (rows: PatternRow[]) => {
@@ -243,28 +253,49 @@ export default function Builder({ tableColumns, fallbackHoles }: BuilderProps) {
     });
   }, []);
 
-  const handleParamsChange = useCallback(async (params: PatternRequest) => {
-    setCurrentParams(params);
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await computePattern(params);
-      setData(response);
-      setLastUpdated(new Date());
-      trackEvent("pattern_generated", {
-        holes: params.holes,
-        crosses: params.crosses,
-        wheel_type: params.wheelType,
-        symmetry: params.symmetry,
-        invert_heads: params.invertHeads,
-        view: "builder",
-      });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unexpected error");
-    } finally {
+  const handleMethodChange = useCallback(
+    (nextMethodId: MethodId) => {
+      if (nextMethodId === methodId) {
+        return;
+      }
+      const nextHoles = normalizeHolesForMethod(nextMethodId, holes);
+      navigate(`/builder/${nextMethodId}/${nextHoles}`);
+    },
+    [holes, methodId, navigate]
+  );
+
+  const handleParamsChange = useCallback(
+    async (params: PatternRequest) => {
+      setCurrentParams(params);
+    if (methodId !== "schraner") {
       setLoading(false);
+      setError(null);
+      setData(null);
+      setLastUpdated(null);
+      return;
     }
-  }, []);
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await computePattern(params);
+        setData(response);
+        setLastUpdated(new Date());
+        trackEvent("pattern_generated", {
+          holes: params.holes,
+          crosses: params.crosses,
+          wheel_type: params.wheelType,
+          symmetry: params.symmetry,
+          invert_heads: params.invertHeads,
+          view: "builder",
+        });
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Unexpected error");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [methodId]
+  );
 
   const refreshPresets = useCallback(async () => {
     try {
@@ -298,6 +329,17 @@ export default function Builder({ tableColumns, fallbackHoles }: BuilderProps) {
     setCurrentParams((prev) => normalizeParamsForHoles(prev, holes));
   }, [holes]);
 
+  useEffect(() => {
+    setActiveStep("all");
+    setVisibleRows([]);
+    setHighlightRows([]);
+    setHoveredSpoke(null);
+    setData(null);
+    setError(null);
+    setLoading(false);
+    setLastUpdated(null);
+  }, [methodId]);
+
   const presetSummaryLabel = useMemo(() => {
     const match = presets.find((preset) => preset.id === selectedPresetId);
     if (!match) {
@@ -317,6 +359,30 @@ export default function Builder({ tableColumns, fallbackHoles }: BuilderProps) {
       currentParams.valveReference
     );
   }, [currentParams, data]);
+
+  const stepGroups = useMemo(() => {
+    if (!supportsSteps) {
+      return "all" as const;
+    }
+    return groupsForStep(activeStep);
+  }, [activeStep, supportsSteps]);
+
+  const stepMatchRows = useMemo(() => {
+    if (!data || !supportsSteps || stepGroups === "all") {
+      return null;
+    }
+    const hasGroups = data.rows.some((row) => typeof row.group === "number");
+    if (!hasGroups) {
+      return null;
+    }
+    return data.rows.filter(
+      (row) => typeof row.group === "number" && stepGroups.includes(row.group)
+    );
+  }, [data, stepGroups, supportsSteps]);
+
+  const diagramVisibleRows = useMemo(() => {
+    return stepMatchRows ?? highlightRows;
+  }, [highlightRows, stepMatchRows]);
 
   const handleSelectPreset = useCallback(
     async (id: string | null) => {
@@ -838,16 +904,64 @@ export default function Builder({ tableColumns, fallbackHoles }: BuilderProps) {
         </Helmet>
       ) : null}
       <section className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold">Builder</h1>
+          <p className="text-sm text-slate-600">{method.shortDescription}</p>
         </div>
-        {presetSummaryLabel ? (
-          <div className="text-xs text-slate-500">
-            {`Preset: ${presetSummaryLabel}`}
-          </div>
-        ) : null}
+        <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+          {presetSummaryLabel ? (
+            <div>{`Preset: ${presetSummaryLabel}`}</div>
+          ) : null}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="h-8 text-xs">
+                Method: {method.name}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {methodOptions.map((option) => (
+                <DropdownMenuItem
+                  key={option.id}
+                  disabled={option.id === methodId}
+                  onClick={() => handleMethodChange(option.id)}
+                >
+                  {option.name}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
+
+      {supportsSteps && (
+        <div className="flex flex-wrap items-center gap-3 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs">
+          <span className="text-[11px] font-semibold uppercase text-slate-500">
+            Step filter
+          </span>
+          <div className="inline-flex rounded-md border border-border bg-background p-1">
+            {(method.steps ?? []).map((step) => {
+              const active = step.id === activeStep;
+              return (
+                <Button
+                  key={step.id}
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setActiveStep(step.id)}
+                  className={`rounded px-3 py-1.5 text-[11px] font-semibold transition ${
+                    active
+                      ? "bg-primary/10 text-foreground"
+                      : "text-muted-foreground hover:bg-accent/40 hover:text-foreground"
+                  }`}
+                >
+                  {step.label}
+                </Button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="!mt-3 space-y-6 lg:grid lg:grid-cols-[380px_1fr] lg:gap-6 lg:space-y-0">
         {!printMode && (
@@ -959,14 +1073,13 @@ export default function Builder({ tableColumns, fallbackHoles }: BuilderProps) {
               </CardContent>
             </Card>
           )}
-          {data ? (
-            <Tabs
-              value={resultsTab}
-              onValueChange={(value) =>
-                setResultsTab(value as "table" | "diagram" | "both")
-              }
-              className="space-y-3"
-            >
+          <Tabs
+            value={resultsTab}
+            onValueChange={(value) =>
+              setResultsTab(value as "table" | "diagram" | "both")
+            }
+            className="space-y-3"
+          >
               <TabsList className="flex flex-wrap gap-2 bg-transparent p-0">
                 <TabsTrigger
                   value="table"
@@ -1002,265 +1115,9 @@ export default function Builder({ tableColumns, fallbackHoles }: BuilderProps) {
                 value="table"
                 className="transition-all duration-200 data-[state=inactive]:translate-y-1 data-[state=inactive]:opacity-0 data-[state=active]:translate-y-0 data-[state=active]:opacity-100"
               >
-                <Card
-                  id="pattern-table"
-                  className="border-l-4 border-l-primary/40 transition-all duration-200 ease-out"
-                >
-                  <CardHeader className="flex flex-wrap items-center gap-2 border-b border-border bg-muted/40 py-1.5">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-7 text-xs hover:text-primary sm:ml-auto"
-                        >
-                          Actions
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() => handleCopyCsv(tableRows)}
-                        >
-                          Copy visible rows as CSV
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => handleCopyCsv(data.rows)}
-                        >
-                          Copy all rows as CSV
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => handleDownloadCsv(data.rows)}
-                        >
-                          Download CSV
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => setPrintMode(true)}
-                        >
-                          Print
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </CardHeader>
-                  <CardContent className="space-y-3 pt-1.5">
-                    <div className="overflow-x-auto rounded-md border border-slate-200 bg-white">
-                      <PatternTable
-                        rows={data.rows}
-                        printMode={printMode}
-                        onVisibleRowsChange={setVisibleRows}
-                        onHighlightRowsChange={setHighlightRows}
-                        onHoverSpokeChange={setHoveredSpoke}
-                        sideFilter={sideFilter}
-                        columnVisibility={tableColumns}
-                        analyticsContext={{
-                          holes: currentParams.holes,
-                          crosses: currentParams.crosses,
-                          wheelType: currentParams.wheelType,
-                          symmetry: currentParams.symmetry,
-                        }}
-                      />
-                    </div>
-                    <p className="text-xs text-slate-500 sm:hidden">
-                      Tip: scroll horizontally for more columns.
-                    </p>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              <TabsContent
-                value="diagram"
-                className="transition-all duration-200 data-[state=inactive]:translate-y-1 data-[state=inactive]:opacity-0 data-[state=active]:translate-y-0 data-[state=active]:opacity-100"
-              >
-                {!printMode && (
-                  <Card className={diagramCardClass}>
-                    <CardHeader className="flex flex-wrap items-center gap-2 border-b border-border bg-muted/40 py-1.5">
-                      <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase text-slate-500">
-                        {sideFilter !== "All" && (
-                          <Badge variant="neutral">Filter: {sideFilter}</Badge>
-                        )}
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 px-2 text-[11px] text-primary underline-offset-4 hover:bg-primary/10 hover:text-primary hover:underline sm:ml-auto"
-                        aria-label="Jump to the pattern table"
-                        onClick={() => {
-                          setResultsTab("table");
-                          window.requestAnimationFrame(() => {
-                            document
-                              .getElementById("pattern-table")
-                              ?.scrollIntoView({
-                                behavior: "smooth",
-                                block: "start",
-                              });
-                          });
-                        }}
-                      >
-                        Jump to table
-                      </Button>
-                    </CardHeader>
-                    <CardContent className="pt-1.5">
-                      <div className="space-y-3">
-                        {diagramControls}
-                        <p className="text-xs text-slate-600 lg:hidden">
-                          Tap a row in the table to highlight it here.
-                        </p>
-                        <div className="grid max-w-full gap-4 lg:grid-cols-[minmax(0,1fr)_260px]">
-                          <div
-                            className={`relative h-[360px] w-full overflow-hidden rounded-md border border-slate-200 bg-white ${
-                              diagramZoom > 1
-                                ? "cursor-grab active:cursor-grabbing"
-                                : ""
-                            }`}
-                            onPointerDown={handleDiagramPanStart}
-                            style={{
-                              touchAction: diagramZoom > 1 ? "none" : "auto",
-                            }}
-                          >
-                            <div
-                              className="h-full w-full"
-                              style={{
-                                transform: `translate(${diagramPan.x}px, ${diagramPan.y}px) scale(${diagramZoom})`,
-                                transformOrigin: "center",
-                              }}
-                            >
-                              <PatternDiagram
-                                holes={currentParams.holes}
-                                rows={data.rows}
-                                visibleRows={highlightRows}
-                                startRimHole={currentParams.startRimHole}
-                                valveReference={currentParams.valveReference}
-                                hoveredSpoke={hoveredSpoke}
-                                showLabels={showDiagramLabels}
-                                showFaintSpokes={diagramFaintSpokes}
-                                view={diagramView}
-                                curved={diagramCurved}
-                                occlusion={diagramOcclusion}
-                                shortArc={diagramShortArc}
-                                lookFrom={diagramLookFrom}
-                                showRearFlange={diagramShowRearFlange}
-                                showRearSpokes={diagramShowRearSpokes}
-                              />
-                            </div>
-                          </div>
-                          <div className="hidden space-y-3 text-xs text-slate-600 lg:block">
-                            <div className="text-[11px] font-semibold uppercase text-slate-500">
-                              How to read this
-                            </div>
-                            <p>
-                              Each line is a spoke path. Switch to Table or Both
-                              to filter steps or focus a specific spoke.
-                            </p>
-                            <div className="pt-1 text-[11px] font-semibold uppercase text-slate-500">
-                              Spoke: {hoveredSpoke ?? "—"}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-              </TabsContent>
-              <TabsContent
-                value="both"
-                className="transition-all duration-200 data-[state=inactive]:translate-y-1 data-[state=inactive]:opacity-0 data-[state=active]:translate-y-0 data-[state=active]:opacity-100"
-              >
-                <div className="space-y-2">
-                  {!printMode && (
-                    <Card className={diagramCardClass}>
-                      <CardHeader className="flex flex-wrap items-center gap-2 border-b border-border bg-muted/40 py-1.5">
-                      <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase text-slate-500">
-                        {sideFilter !== "All" && (
-                          <Badge variant="neutral">Filter: {sideFilter}</Badge>
-                        )}
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                          size="sm"
-                          className="h-6 px-2 text-[11px] text-primary underline-offset-4 hover:bg-primary/10 hover:text-primary hover:underline sm:ml-auto"
-                          aria-label="Jump to the pattern table"
-                          onClick={() =>
-                            document
-                              .getElementById("pattern-table-both")
-                              ?.scrollIntoView({
-                                behavior: "smooth",
-                                block: "start",
-                              })
-                          }
-                        >
-                          Jump to table
-                        </Button>
-                      </CardHeader>
-                      <CardContent className="pt-1.5">
-                        <div className="space-y-3">
-                          {diagramControls}
-                        <div className="relative">
-                          <Badge
-                            variant="neutral"
-                            className={`pointer-events-none absolute left-3 top-3 transition-opacity duration-150 ${
-                              hoveredSpoke ? "opacity-100" : "opacity-0"
-                            }`}
-                          >
-                            Spoke: {hoveredSpoke ?? "—"}
-                          </Badge>
-                          <p className="text-xs text-slate-600 lg:hidden">
-                            Tap a row in the table to highlight it here.
-                          </p>
-                          <div className="mt-2 grid max-w-full gap-4 lg:grid-cols-[minmax(0,1fr)_260px]">
-                            <div
-                              className={`relative h-[360px] w-full overflow-hidden rounded-md border border-slate-200 bg-white ${
-                                diagramZoom > 1
-                                  ? "cursor-grab active:cursor-grabbing"
-                                  : ""
-                              }`}
-                              onPointerDown={handleDiagramPanStart}
-                              style={{
-                                touchAction: diagramZoom > 1 ? "none" : "auto",
-                              }}
-                            >
-                              <div
-                                className="h-full w-full"
-                                style={{
-                                  transform: `translate(${diagramPan.x}px, ${diagramPan.y}px) scale(${diagramZoom})`,
-                                  transformOrigin: "center",
-                                }}
-                              >
-                                <PatternDiagram
-                                  holes={currentParams.holes}
-                                  rows={data.rows}
-                                  visibleRows={highlightRows}
-                                  startRimHole={currentParams.startRimHole}
-                                  valveReference={currentParams.valveReference}
-                                  hoveredSpoke={hoveredSpoke}
-                                  showLabels={showDiagramLabels}
-                                  showFaintSpokes={diagramFaintSpokes}
-                                  view={diagramView}
-                                  curved={diagramCurved}
-                                  occlusion={diagramOcclusion}
-                                  shortArc={diagramShortArc}
-                                  lookFrom={diagramLookFrom}
-                                  showRearFlange={diagramShowRearFlange}
-                                  showRearSpokes={diagramShowRearSpokes}
-                                />
-                              </div>
-                            </div>
-                            <div className="hidden space-y-3 text-xs text-slate-600 lg:block">
-                              <div className="text-[11px] font-semibold uppercase text-slate-500">
-                                How to read this
-                              </div>
-                                <p>
-                                  Each line is a spoke path. Hover rows in the table to
-                                  highlight them here.
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
+                {hasData ? (
                   <Card
-                    id="pattern-table-both"
+                    id="pattern-table"
                     className="border-l-4 border-l-primary/40 transition-all duration-200 ease-out"
                   >
                     <CardHeader className="flex flex-wrap items-center gap-2 border-b border-border bg-muted/40 py-1.5">
@@ -1307,11 +1164,13 @@ export default function Builder({ tableColumns, fallbackHoles }: BuilderProps) {
                           onHighlightRowsChange={setHighlightRows}
                           onHoverSpokeChange={setHoveredSpoke}
                           sideFilter={sideFilter}
-                          columnVisibility={tableColumns}
-                          analyticsContext={{
-                            holes: currentParams.holes,
-                            crosses: currentParams.crosses,
-                            wheelType: currentParams.wheelType,
+                        columnVisibility={tableColumns}
+                        emphasisRows={stepMatchRows ?? undefined}
+                        showStepControls={!supportsSteps}
+                        analyticsContext={{
+                          holes: currentParams.holes,
+                          crosses: currentParams.crosses,
+                          wheelType: currentParams.wheelType,
                             symmetry: currentParams.symmetry,
                           }}
                         />
@@ -1321,14 +1180,317 @@ export default function Builder({ tableColumns, fallbackHoles }: BuilderProps) {
                       </p>
                     </CardContent>
                   </Card>
+                ) : (
+                  <Card className="border-l-4 border-l-primary/20 bg-muted/20">
+                    <CardHeader>
+                      <CardTitle className="text-sm">Table</CardTitle>
+                      <CardDescription>
+                        {methodNotReady
+                          ? "This method is not implemented yet."
+                          : "Adjust parameters to generate a table."}
+                      </CardDescription>
+                    </CardHeader>
+                  </Card>
+                )}
+              </TabsContent>
+              <TabsContent
+                value="diagram"
+                className="transition-all duration-200 data-[state=inactive]:translate-y-1 data-[state=inactive]:opacity-0 data-[state=active]:translate-y-0 data-[state=active]:opacity-100"
+              >
+                {!printMode &&
+                  (hasData ? (
+                    <Card className={diagramCardClass}>
+                      <CardHeader className="flex flex-wrap items-center gap-2 border-b border-border bg-muted/40 py-1.5">
+                        <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase text-slate-500">
+                          {sideFilter !== "All" && (
+                            <Badge variant="neutral">Filter: {sideFilter}</Badge>
+                          )}
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-2 text-[11px] text-primary underline-offset-4 hover:bg-primary/10 hover:text-primary hover:underline sm:ml-auto"
+                          aria-label="Jump to the pattern table"
+                          onClick={() => {
+                            setResultsTab("table");
+                            window.requestAnimationFrame(() => {
+                              document
+                                .getElementById("pattern-table")
+                                ?.scrollIntoView({
+                                  behavior: "smooth",
+                                  block: "start",
+                                });
+                            });
+                          }}
+                        >
+                          Jump to table
+                        </Button>
+                      </CardHeader>
+                      <CardContent className="pt-1.5">
+                        <div className="space-y-3">
+                          {diagramControls}
+                          <p className="text-xs text-slate-600 lg:hidden">
+                            Tap a row in the table to highlight it here.
+                          </p>
+                          <div className="grid max-w-full gap-4 lg:grid-cols-[minmax(0,1fr)_260px]">
+                            <div
+                              className={`relative h-[360px] w-full overflow-hidden rounded-md border border-slate-200 bg-white ${
+                                diagramZoom > 1
+                                  ? "cursor-grab active:cursor-grabbing"
+                                  : ""
+                              }`}
+                              onPointerDown={handleDiagramPanStart}
+                              style={{
+                                touchAction: diagramZoom > 1 ? "none" : "auto",
+                              }}
+                            >
+                              <div
+                                className="h-full w-full"
+                                style={{
+                                  transform: `translate(${diagramPan.x}px, ${diagramPan.y}px) scale(${diagramZoom})`,
+                                  transformOrigin: "center",
+                                }}
+                              >
+                                <PatternDiagram
+                                  holes={currentParams.holes}
+                                  rows={data.rows}
+                                  visibleRows={diagramVisibleRows}
+                                  startRimHole={currentParams.startRimHole}
+                                  valveReference={currentParams.valveReference}
+                                  hoveredSpoke={hoveredSpoke}
+                                  showLabels={showDiagramLabels}
+                                  showFaintSpokes={diagramFaintSpokes}
+                                  view={diagramView}
+                                  curved={diagramCurved}
+                                  occlusion={diagramOcclusion}
+                                  shortArc={diagramShortArc}
+                                  lookFrom={diagramLookFrom}
+                                  showRearFlange={diagramShowRearFlange}
+                                  showRearSpokes={diagramShowRearSpokes}
+                                />
+                              </div>
+                            </div>
+                            <div className="hidden space-y-3 text-xs text-slate-600 lg:block">
+                              <div className="text-[11px] font-semibold uppercase text-slate-500">
+                                How to read this
+                              </div>
+                              <p>
+                                Each line is a spoke path. Switch to Table or Both
+                                to filter steps or focus a specific spoke.
+                              </p>
+                              <div className="pt-1 text-[11px] font-semibold uppercase text-slate-500">
+                                Spoke: {hoveredSpoke ?? "—"}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <Card className="border-l-4 border-l-primary/20 bg-muted/20">
+                      <CardHeader>
+                        <CardTitle className="text-sm">Diagram</CardTitle>
+                        <CardDescription>
+                          {methodNotReady
+                            ? "This method is not implemented yet."
+                            : "Adjust parameters to generate a diagram."}
+                        </CardDescription>
+                      </CardHeader>
+                    </Card>
+                  ))}
+              </TabsContent>
+              <TabsContent
+                value="both"
+                className="transition-all duration-200 data-[state=inactive]:translate-y-1 data-[state=inactive]:opacity-0 data-[state=active]:translate-y-0 data-[state=active]:opacity-100"
+              >
+                <div className="space-y-2">
+                  {!printMode &&
+                    (hasData ? (
+                      <Card className={diagramCardClass}>
+                        <CardHeader className="flex flex-wrap items-center gap-2 border-b border-border bg-muted/40 py-1.5">
+                        <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase text-slate-500">
+                          {sideFilter !== "All" && (
+                            <Badge variant="neutral">Filter: {sideFilter}</Badge>
+                          )}
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                            size="sm"
+                            className="h-6 px-2 text-[11px] text-primary underline-offset-4 hover:bg-primary/10 hover:text-primary hover:underline sm:ml-auto"
+                            aria-label="Jump to the pattern table"
+                            onClick={() =>
+                              document
+                                .getElementById("pattern-table-both")
+                                ?.scrollIntoView({
+                                  behavior: "smooth",
+                                  block: "start",
+                                })
+                            }
+                          >
+                            Jump to table
+                          </Button>
+                        </CardHeader>
+                        <CardContent className="pt-1.5">
+                          <div className="space-y-3">
+                            {diagramControls}
+                          <div className="relative">
+                            <Badge
+                              variant="neutral"
+                              className={`pointer-events-none absolute left-3 top-3 transition-opacity duration-150 ${
+                                hoveredSpoke ? "opacity-100" : "opacity-0"
+                              }`}
+                            >
+                              Spoke: {hoveredSpoke ?? "—"}
+                            </Badge>
+                            <p className="text-xs text-slate-600 lg:hidden">
+                              Tap a row in the table to highlight it here.
+                            </p>
+                            <div className="mt-2 grid max-w-full gap-4 lg:grid-cols-[minmax(0,1fr)_260px]">
+                              <div
+                                className={`relative h-[360px] w-full overflow-hidden rounded-md border border-slate-200 bg-white ${
+                                  diagramZoom > 1
+                                    ? "cursor-grab active:cursor-grabbing"
+                                    : ""
+                                }`}
+                                onPointerDown={handleDiagramPanStart}
+                                style={{
+                                  touchAction: diagramZoom > 1 ? "none" : "auto",
+                                }}
+                              >
+                                <div
+                                  className="h-full w-full"
+                                  style={{
+                                    transform: `translate(${diagramPan.x}px, ${diagramPan.y}px) scale(${diagramZoom})`,
+                                    transformOrigin: "center",
+                                  }}
+                                >
+                                  <PatternDiagram
+                                    holes={currentParams.holes}
+                                    rows={data.rows}
+                                    visibleRows={diagramVisibleRows}
+                                    startRimHole={currentParams.startRimHole}
+                                    valveReference={currentParams.valveReference}
+                                    hoveredSpoke={hoveredSpoke}
+                                    showLabels={showDiagramLabels}
+                                    showFaintSpokes={diagramFaintSpokes}
+                                    view={diagramView}
+                                    curved={diagramCurved}
+                                    occlusion={diagramOcclusion}
+                                    shortArc={diagramShortArc}
+                                    lookFrom={diagramLookFrom}
+                                    showRearFlange={diagramShowRearFlange}
+                                    showRearSpokes={diagramShowRearSpokes}
+                                  />
+                                </div>
+                              </div>
+                              <div className="hidden space-y-3 text-xs text-slate-600 lg:block">
+                                <div className="text-[11px] font-semibold uppercase text-slate-500">
+                                  How to read this
+                                </div>
+                                  <p>
+                                    Each line is a spoke path. Hover rows in the table to
+                                    highlight them here.
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ) : (
+                      <Card className="border-l-4 border-l-primary/20 bg-muted/20">
+                        <CardHeader>
+                          <CardTitle className="text-sm">Diagram</CardTitle>
+                          <CardDescription>
+                            {methodNotReady
+                              ? "This method is not implemented yet."
+                              : "Adjust parameters to generate a diagram."}
+                          </CardDescription>
+                        </CardHeader>
+                      </Card>
+                    ))}
+                  {hasData ? (
+                    <Card
+                      id="pattern-table-both"
+                      className="border-l-4 border-l-primary/40 transition-all duration-200 ease-out"
+                    >
+                      <CardHeader className="flex flex-wrap items-center gap-2 border-b border-border bg-muted/40 py-1.5">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs hover:text-primary sm:ml-auto"
+                            >
+                              Actions
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => handleCopyCsv(tableRows)}
+                            >
+                              Copy visible rows as CSV
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleCopyCsv(data.rows)}
+                            >
+                              Copy all rows as CSV
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleDownloadCsv(data.rows)}
+                            >
+                              Download CSV
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => setPrintMode(true)}
+                            >
+                              Print
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </CardHeader>
+                      <CardContent className="space-y-3 pt-1.5">
+                        <div className="overflow-x-auto rounded-md border border-slate-200 bg-white">
+                          <PatternTable
+                            rows={data.rows}
+                            printMode={printMode}
+                            onVisibleRowsChange={setVisibleRows}
+                            onHighlightRowsChange={setHighlightRows}
+                            onHoverSpokeChange={setHoveredSpoke}
+                          sideFilter={sideFilter}
+                          columnVisibility={tableColumns}
+                          emphasisRows={stepMatchRows ?? undefined}
+                          showStepControls={!supportsSteps}
+                          analyticsContext={{
+                            holes: currentParams.holes,
+                            crosses: currentParams.crosses,
+                            wheelType: currentParams.wheelType,
+                              symmetry: currentParams.symmetry,
+                            }}
+                          />
+                        </div>
+                        <p className="text-xs text-slate-500 sm:hidden">
+                          Tip: scroll horizontally for more columns.
+                        </p>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <Card className="border-l-4 border-l-primary/20 bg-muted/20">
+                      <CardHeader>
+                        <CardTitle className="text-sm">Table</CardTitle>
+                        <CardDescription>
+                          {methodNotReady
+                            ? "This method is not implemented yet."
+                            : "Adjust parameters to generate a table."}
+                        </CardDescription>
+                      </CardHeader>
+                    </Card>
+                  )}
                 </div>
               </TabsContent>
             </Tabs>
-          ) : (
-            <div className="rounded-lg border border-dashed border-slate-300 bg-white p-6 text-sm text-slate-500">
-              Pick your wheel basics to generate a pattern.
-            </div>
-          )}
         </div>
       </div>
       </section>

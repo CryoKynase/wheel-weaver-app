@@ -34,6 +34,8 @@ type PatternTableProps = {
   onHoverSpokeChange?: (spoke: string | null) => void;
   sideFilter: "All" | "DS" | "NDS";
   columnVisibility: TableColumnVisibility;
+  emphasisRows?: PatternRow[];
+  showStepControls?: boolean;
   analyticsContext?: {
     holes?: number;
     crosses?: number;
@@ -105,6 +107,8 @@ export default function PatternTable({
   onHoverSpokeChange,
   sideFilter,
   columnVisibility,
+  emphasisRows,
+  showStepControls = true,
   analyticsContext,
 }: PatternTableProps) {
   const [displayMode, setDisplayMode] = useState<DisplayMode>(() => {
@@ -130,6 +134,13 @@ export default function PatternTable({
     () => ({ ...defaultVisibility, ...columnVisibility }),
     [columnVisibility]
   );
+  const allowStepControls = showStepControls;
+  const emphasisSet = useMemo(() => {
+    if (!emphasisRows || emphasisRows.length === 0) {
+      return null;
+    }
+    return new Set(emphasisRows.map((row) => row.order));
+  }, [emphasisRows]);
 
   const stickyConfig = useMemo(() => {
     let left = 0;
@@ -161,6 +172,15 @@ export default function PatternTable({
       setDisplayMode("table");
     }
   }, [printMode]);
+
+  useEffect(() => {
+    if (allowStepControls) {
+      return;
+    }
+    setNextStepMode(false);
+    setStepFilter("All");
+    setActiveStep(null);
+  }, [allowStepControls]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -227,13 +247,16 @@ export default function PatternTable({
   }, [activeStep, nextStepMode, stepFilter]);
 
   const visibleRows = useMemo(() => {
-    if (!nextStepMode || !activeStep) {
+    if (!allowStepControls || !nextStepMode || !activeStep) {
       return filteredRows;
     }
     return filteredRows.filter((row) => row.step === activeStep);
-  }, [filteredRows, nextStepMode, activeStep]);
+  }, [activeStep, allowStepControls, filteredRows, nextStepMode]);
 
   const highlightRows = useMemo(() => {
+    if (!allowStepControls) {
+      return filteredRows;
+    }
     if (highlightMode === "visible") {
       return visibleRows;
     }
@@ -444,54 +467,58 @@ export default function PatternTable({
                     >
                       Export CSV
                     </Button>
-                    <Button
-                      type="button"
-                      onClick={() => setNextStepMode((prev) => !prev)}
-                      variant="outline"
-                      size="sm"
-                      className={`h-7 text-xs ${
-                        nextStepMode
-                          ? "border-primary/40 bg-primary/10 text-foreground"
-                          : "text-muted-foreground hover:bg-accent/40 hover:text-foreground"
-                      }`}
-                    >
-                      Next step mode
-                    </Button>
-                    {nextStepMode && (
-                      <div className="flex items-center gap-2">
+                    {allowStepControls && (
+                      <>
                         <Button
                           type="button"
-                          onClick={handleStepPrev}
-                          disabled={
-                            !availableSteps.length ||
-                            (stepIndex <= 0 && stepIndex !== -1)
-                          }
+                          onClick={() => setNextStepMode((prev) => !prev)}
                           variant="outline"
                           size="sm"
-                          className="h-7 text-xs"
+                          className={`h-7 text-xs ${
+                            nextStepMode
+                              ? "border-primary/40 bg-primary/10 text-foreground"
+                              : "text-muted-foreground hover:bg-accent/40 hover:text-foreground"
+                          }`}
                         >
-                          Prev step
+                          Next step mode
                         </Button>
-                        <Button
-                          type="button"
-                          onClick={handleStepNext}
-                          disabled={
-                            !availableSteps.length ||
-                            (stepIndex >= availableSteps.length - 1 &&
-                              stepIndex !== -1)
-                          }
-                          variant="outline"
-                          size="sm"
-                          className="h-7 text-xs"
-                        >
-                          Next step
-                        </Button>
-                        {activeStep && (
-                          <span className="text-xs text-slate-500">
-                            Showing {activeStep}
-                          </span>
+                        {nextStepMode && (
+                          <div className="flex items-center gap-2">
+                            <Button
+                              type="button"
+                              onClick={handleStepPrev}
+                              disabled={
+                                !availableSteps.length ||
+                                (stepIndex <= 0 && stepIndex !== -1)
+                              }
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs"
+                            >
+                              Prev step
+                            </Button>
+                            <Button
+                              type="button"
+                              onClick={handleStepNext}
+                              disabled={
+                                !availableSteps.length ||
+                                (stepIndex >= availableSteps.length - 1 &&
+                                  stepIndex !== -1)
+                              }
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs"
+                            >
+                              Next step
+                            </Button>
+                            {activeStep && (
+                              <span className="text-xs text-slate-500">
+                                Showing {activeStep}
+                              </span>
+                            )}
+                          </div>
                         )}
-                      </div>
+                      </>
                     )}
                   </>
                 )}
@@ -524,35 +551,37 @@ export default function PatternTable({
 
       {displayMode === "table" && (
         <>
-          <div className="flex flex-wrap items-center gap-3 no-print">
-            <div className="flex items-center gap-2">
-              {stepOptions.map((step) => (
-                <Button
-                  key={step}
-                  onClick={() => {
-                    setStepFilter(step);
-                    if (nextStepMode) {
-                      if (step === "All") {
-                        setNextStepMode(false);
-                      } else {
-                        setActiveStep(step);
+          {allowStepControls && (
+            <div className="flex flex-wrap items-center gap-3 no-print">
+              <div className="flex items-center gap-2">
+                {stepOptions.map((step) => (
+                  <Button
+                    key={step}
+                    onClick={() => {
+                      setStepFilter(step);
+                      if (nextStepMode) {
+                        if (step === "All") {
+                          setNextStepMode(false);
+                        } else {
+                          setActiveStep(step);
+                        }
                       }
-                    }
-                  }}
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className={`h-7 rounded-full px-3 text-xs font-medium ${
-                    stepFilter === step
-                      ? "border-primary/40 bg-primary/10 text-foreground"
-                      : "text-muted-foreground hover:bg-accent/40 hover:text-foreground"
-                  }`}
-                >
-                  {step}
-                </Button>
-              ))}
+                    }}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className={`h-7 rounded-full px-3 text-xs font-medium ${
+                      stepFilter === step
+                        ? "border-primary/40 bg-primary/10 text-foreground"
+                        : "text-muted-foreground hover:bg-accent/40 hover:text-foreground"
+                    }`}
+                  >
+                    {step}
+                  </Button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
             <table
@@ -588,12 +617,20 @@ export default function PatternTable({
                 {table.getRowModel().rows.map((row) => {
                   const highlight = row.original.notes.includes("Reference");
                   const isSelected = row.original.spoke === selectedSpoke;
+                  const isEmphasisMatch =
+                    emphasisSet == null || emphasisSet.has(row.original.order);
+                  const dimRow =
+                    emphasisSet != null && !isEmphasisMatch ? "opacity-40" : "";
+                  const emphasizeRow =
+                    emphasisSet != null && isEmphasisMatch && !highlight && !isSelected
+                      ? "bg-primary/5"
+                      : "";
                   return (
                     <tr
                       key={row.id}
                       className={`${highlight ? "bg-amber-50" : ""} ${
                         isSelected ? "border-l-4 border-l-primary/40 bg-primary/5" : ""
-                      }`}
+                      } ${emphasizeRow} ${dimRow}`}
                       onMouseEnter={() => onHoverSpokeChange?.(row.original.spoke)}
                       onMouseLeave={handleRowLeave}
                       onClick={() => handleRowSelect(row.original.spoke)}
@@ -645,69 +682,73 @@ export default function PatternTable({
           <div className="text-xs font-semibold uppercase text-slate-500">
             Compact lookup
           </div>
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <Button
-              type="button"
-              onClick={handleStepPrev}
-              variant="outline"
-              size="sm"
-              className="h-11 px-4 text-xs"
-            >
-              Prev step
-            </Button>
-            <Button
-              type="button"
-              onClick={handleStepNext}
-              variant="outline"
-              size="sm"
-              className="h-11 px-4 text-xs"
-            >
-              Next step
-            </Button>
-            {activeStep && (
-              <span className="text-xs text-slate-500">Showing {activeStep}</span>
-            )}
-          </div>
-          {nextActionRow && (
-            <div className="mt-3 rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
-              <div className="text-[10px] font-semibold uppercase text-slate-500">
-                Next spoke action
+          {allowStepControls && (
+            <>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  onClick={handleStepPrev}
+                  variant="outline"
+                  size="sm"
+                  className="h-11 px-4 text-xs"
+                >
+                  Prev step
+                </Button>
+                <Button
+                  type="button"
+                  onClick={handleStepNext}
+                  variant="outline"
+                  size="sm"
+                  className="h-11 px-4 text-xs"
+                >
+                  Next step
+                </Button>
+                {activeStep && (
+                  <span className="text-xs text-slate-500">Showing {activeStep}</span>
+                )}
               </div>
-              <div className="mt-2 grid gap-2 text-sm sm:grid-cols-2">
-                <div>
-                  <span className="text-[10px] uppercase text-slate-500">
-                    Spoke
-                  </span>
-                  <div className="font-medium text-slate-900">
-                    {nextActionRow.spoke}
+              {nextActionRow && (
+                <div className="mt-3 rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+                  <div className="text-[10px] font-semibold uppercase text-slate-500">
+                    Next spoke action
+                  </div>
+                  <div className="mt-2 grid gap-2 text-sm sm:grid-cols-2">
+                    <div>
+                      <span className="text-[10px] uppercase text-slate-500">
+                        Spoke
+                      </span>
+                      <div className="font-medium text-slate-900">
+                        {nextActionRow.spoke}
+                      </div>
+                    </div>
+                    <div>
+                      <span className="text-[10px] uppercase text-slate-500">
+                        Hub hole
+                      </span>
+                      <div className="font-medium text-slate-900">
+                        {nextActionRow.hubHole}
+                      </div>
+                    </div>
+                    <div>
+                      <span className="text-[10px] uppercase text-slate-500">
+                        Rim hole
+                      </span>
+                      <div className="font-medium text-slate-900">
+                        {nextActionRow.rimHole}
+                      </div>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <span className="text-[10px] uppercase text-slate-500">
+                        Notes
+                      </span>
+                      <div className="font-medium text-slate-900">
+                        {nextActionRow.notes || "—"}
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div>
-                  <span className="text-[10px] uppercase text-slate-500">
-                    Hub hole
-                  </span>
-                  <div className="font-medium text-slate-900">
-                    {nextActionRow.hubHole}
-                  </div>
-                </div>
-                <div>
-                  <span className="text-[10px] uppercase text-slate-500">
-                    Rim hole
-                  </span>
-                  <div className="font-medium text-slate-900">
-                    {nextActionRow.rimHole}
-                  </div>
-                </div>
-                <div className="sm:col-span-2">
-                  <span className="text-[10px] uppercase text-slate-500">
-                    Notes
-                  </span>
-                  <div className="font-medium text-slate-900">
-                    {nextActionRow.notes || "—"}
-                  </div>
-                </div>
-              </div>
-            </div>
+              )}
+            </>
           )}
           <div className="mt-3 flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2">

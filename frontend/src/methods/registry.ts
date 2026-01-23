@@ -1,5 +1,5 @@
 import { defaultPatternRequest } from "../lib/defaults";
-import type { LacingMethod, MethodId } from "./types";
+import type { LacingMethod, MethodId, StepId } from "./types";
 import { schranerMethod } from "./schraner";
 import { standardMethod } from "./standard";
 
@@ -40,4 +40,19 @@ export function normalizeHolesForMethod(
     }
   }
   return nearest;
+}
+
+export function groupsForStep(step: StepId): number[] | "all" {
+  switch (step) {
+    case "step1":
+      return [1];
+    case "step2":
+      return [2];
+    case "step3":
+      return [3];
+    case "step4":
+      return [4];
+    default:
+      return "all";
+  }
 }

@@ -22,6 +22,7 @@ export type PatternRow = {
   rimHole: number;
   crossesDescribed: string;
   notes: string;
+  group?: number;
 };
 
 export type PatternResponse = {
