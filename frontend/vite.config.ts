@@ -27,10 +27,20 @@ const prerenderRoutes = [
 ];
 
 const PrerenderRenderer = vitePrerender.PuppeteerRenderer;
-const isRailway = Boolean(
-  process.env.RAILWAY || process.env.RAILWAY_ENVIRONMENT
-);
-const enablePrerender = process.env.PRERENDER === "true" || !isRailway;
+
+const isRailway = Boolean(process.env.RAILWAY || process.env.RAILWAY_ENVIRONMENT);
+
+// Cloudflare Pages sets CF_PAGES="1" during builds.
+// We disable Puppeteer prerender on Pages because Chromium deps aren't available there.
+const isCloudflarePages =
+  process.env.CF_PAGES === "1" || process.env.CF_PAGES === "true";
+
+// Default behaviour:
+// - Local: prerender ON
+// - Railway: prerender OFF (unless explicitly enabled)
+// - Cloudflare Pages: prerender OFF (even if PRERENDER=true, to avoid build failures)
+const enablePrerender =
+  !isCloudflarePages && (process.env.PRERENDER === "true" || !isRailway);
 
 export default defineConfig({
   plugins: [
