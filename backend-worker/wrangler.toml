@@ -1,0 +1,4 @@
+name = "wheelweaver-api"
+main = "main.py"
+compatibility_date = "2026-02-15"
+compatibility_flags = ["python_workers"]
