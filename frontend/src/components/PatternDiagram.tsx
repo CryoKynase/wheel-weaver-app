@@ -127,6 +127,7 @@ export default function PatternDiagram({
   const valveRight = valveRightHole(holes, startRimHole, valveReference);
   const valveLeft = wrapHole(holes, valveRight - 1);
   const visibleSet = new Set(visibleRows.map((row) => row.order));
+  const isStepMode = visibleRows.length > 0 && visibleRows.length < rows.length;
   const rimLabelSet = new Set<number>([1, valveLeft]);
   const rimStep = 360 / holes;
 
@@ -157,9 +158,11 @@ export default function PatternDiagram({
       ? 1
       : isVisible
         ? 0.85
-        : showFaintSpokes
-          ? 0.12
-          : 0;
+        : isStepMode
+          ? 0
+          : showFaintSpokes
+            ? 0.12
+            : 0;
     const strokeWidth = isHovered ? 3.5 : isVisible ? 2.4 : 1;
 
     if (view === "classic" || view === "engineer" || !curved) {
