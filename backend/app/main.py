@@ -19,7 +19,6 @@ app = FastAPI(lifespan=lifespan)
 allowed_origins = [
     "https://www.wheelweaver.com",
     "https://wheelweaver.com",
-    "https://wheel-weaver-app-production.up.railway.app",
     "http://localhost:5173",
     "http://localhost:8007",
     "http://localhost:5177",
